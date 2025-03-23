@@ -243,7 +243,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-Made with ❤️ by [Your Name/Team]
+By Keshav Rajbux
 
 [![Twitter](https://img.shields.io/badge/Twitter-@yourhandle-blue.svg)](https://twitter.com/yourhandle)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Your%20Name-blue.svg)](https://linkedin.com/in/yourprofile)
