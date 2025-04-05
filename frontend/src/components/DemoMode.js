@@ -9,31 +9,20 @@ import {
   Select,
   FormControl,
   FormLabel,
-  Grid,
-  GridItem,
-  Card,
-  CardBody,
   Stat,
   StatLabel,
   StatNumber,
   StatHelpText,
   StatArrow,
+  Card,
+  CardBody,
+  SimpleGrid,
   Spinner,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
 } from '@chakra-ui/react';
-import demoService from '../services/demoService';
-import AnalysisResults from './AnalysisResults';
 
 const DemoMode = () => {
   const [demoScenario, setDemoScenario] = useState('default');
-  const [income, setIncome] = useState(5000);
-  const [expenses, setExpenses] = useState(3000);
-  const [savings, setSavings] = useState(1000);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
   const toast = useToast();
 
@@ -41,115 +30,82 @@ const DemoMode = () => {
     default: {
       name: 'Default Scenario',
       description: 'A balanced financial profile with moderate spending and saving habits.',
-      transactions: [
-        { date: '2024-03-01', description: 'Grocery Shopping', amount: 150.50, category: 'Food' },
-        { date: '2024-03-02', description: 'Netflix Subscription', amount: 15.99, category: 'Entertainment' },
-        { date: '2024-03-03', description: 'Gas Station', amount: 45.00, category: 'Transportation' },
-      ],
-      portfolio: {
-        stocks: [
-          { symbol: 'AAPL', shares: 10, currentPrice: 175.50, purchasePrice: 150.00 },
-          { symbol: 'GOOGL', shares: 5, currentPrice: 145.20, purchasePrice: 140.00 },
-        ],
-        bonds: [
-          { type: 'US Treasury', value: 10000, yield: 0.04 },
-        ],
-      },
+      income: 5000,
+      expenses: 3000,
+      savings: 2000
     },
     conservative: {
       name: 'Conservative Saver',
       description: 'A conservative financial profile with high savings and low risk investments.',
-      transactions: [
-        { date: '2024-03-01', description: 'Grocery Shopping', amount: 120.00, category: 'Food' },
-        { date: '2024-03-02', description: 'Utility Bill', amount: 85.00, category: 'Utilities' },
-        { date: '2024-03-03', description: 'Public Transport', amount: 25.00, category: 'Transportation' },
-      ],
-      portfolio: {
-        stocks: [
-          { symbol: 'VTI', shares: 15, currentPrice: 220.00, purchasePrice: 200.00 },
-        ],
-        bonds: [
-          { type: 'US Treasury', value: 15000, yield: 0.04 },
-          { type: 'Corporate Bonds', value: 10000, yield: 0.05 },
-        ],
-      },
+      income: 4500,
+      expenses: 2000,
+      savings: 2500
     },
     aggressive: {
       name: 'Aggressive Investor',
       description: 'An aggressive financial profile with high-risk investments and variable spending.',
-      transactions: [
-        { date: '2024-03-01', description: 'Restaurant', amount: 200.00, category: 'Food' },
-        { date: '2024-03-02', description: 'Entertainment', amount: 150.00, category: 'Entertainment' },
-        { date: '2024-03-03', description: 'Car Payment', amount: 400.00, category: 'Transportation' },
-      ],
-      portfolio: {
-        stocks: [
-          { symbol: 'TSLA', shares: 20, currentPrice: 180.00, purchasePrice: 150.00 },
-          { symbol: 'NVDA', shares: 10, currentPrice: 850.00, purchasePrice: 700.00 },
-        ],
-        bonds: [
-          { type: 'High Yield Bonds', value: 5000, yield: 0.08 },
-        ],
-      },
+      income: 6000,
+      expenses: 4000,
+      savings: 2000
     },
   };
 
   const handleScenarioChange = (event) => {
-    const scenario = scenarios[event.target.value];
     setDemoScenario(event.target.value);
-    setIncome(scenario.transactions.reduce((acc, t) => acc + t.amount, 0) + 2000);
-    setExpenses(scenario.transactions.reduce((acc, t) => acc + t.amount, 0));
-    setSavings(2000);
     setAnalysisResults(null);
-    setError(null);
   };
 
   const startDemo = async () => {
     setIsLoading(true);
-    setError(null);
-    try {
-      // Start demo mode
-      const result = demoService.startDemo(scenarios[demoScenario]);
+    
+    // Simulate API call with timeout
+    setTimeout(() => {
+      const scenario = scenarios[demoScenario];
       
-      // Run analyses
-      const [spendingAnalysis, investmentAnalysis, scenarioAnalysis] = await Promise.all([
-        demoService.analyzeSpending(),
-        demoService.analyzeInvestments(),
-        demoService.analyzeScenarios(),
-      ]);
-
+      // Generate simple analysis results
       setAnalysisResults({
-        spendingAnalysis,
-        investmentAnalysis,
-        scenarioAnalysis,
+        spendingAnalysis: {
+          categories: {
+            Housing: { percentage: 35, amount: scenario.expenses * 0.35 },
+            Food: { percentage: 20, amount: scenario.expenses * 0.2 },
+            Transportation: { percentage: 15, amount: scenario.expenses * 0.15 },
+            Entertainment: { percentage: 10, amount: scenario.expenses * 0.1 },
+            Other: { percentage: 20, amount: scenario.expenses * 0.2 },
+          },
+          recommendations: [
+            "Consider meal planning to reduce food expenses",
+            "Look for entertainment subscription bundles",
+            "Track transportation costs and consider carpooling"
+          ]
+        },
+        investmentAnalysis: {
+          totalValue: scenario.savings * 12 * 5, // 5 years of savings
+          returnRate: demoScenario === 'aggressive' ? 0.08 : demoScenario === 'conservative' ? 0.04 : 0.06,
+          riskLevel: demoScenario === 'aggressive' ? 'High' : demoScenario === 'conservative' ? 'Low' : 'Medium',
+          recommendations: [
+            "Maintain emergency fund of 3-6 months expenses",
+            "Consider dollar cost averaging for stock investments",
+            demoScenario === 'aggressive' ? "Diversify to reduce risk" : "Increase stock allocation for higher returns"
+          ]
+        }
       });
-
-      toast({
-        title: 'Demo Mode Activated',
-        description: 'Analysis completed successfully.',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (err) {
-      setError(err.message);
-      toast({
-        title: 'Error',
-        description: 'Failed to complete analysis. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
+      
       setIsLoading(false);
-    }
+      toast({
+        title: 'Analysis Complete',
+        description: 'Financial analysis has been generated',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    }, 2000);
   };
 
   return (
-    <Box p={6} maxW="container.xl" mx="auto">
+    <Box>
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
-          <Heading size="lg" mb={2}>Demo Mode</Heading>
+          <Heading size="lg" mb={2}>Financial Decision Copilot</Heading>
           <Text color="gray.600">
             Test the Financial Decision Copilot with simulated data. No real financial information required.
           </Text>
@@ -159,7 +115,7 @@ const DemoMode = () => {
           <CardBody>
             <VStack spacing={4}>
               <FormControl>
-                <FormLabel>Select Demo Scenario</FormLabel>
+                <FormLabel>Select Financial Profile</FormLabel>
                 <Select value={demoScenario} onChange={handleScenarioChange}>
                   {Object.entries(scenarios).map(([key, scenario]) => (
                     <option key={key} value={key}>
@@ -172,73 +128,104 @@ const DemoMode = () => {
                 </Text>
               </FormControl>
 
-              <Grid templateColumns="repeat(3, 1fr)" gap={4} w="100%">
-                <GridItem>
-                  <Stat>
-                    <StatLabel>Monthly Income</StatLabel>
-                    <StatNumber>${income}</StatNumber>
-                    <StatHelpText>
-                      <StatArrow type="increase" />
-                    </StatHelpText>
-                  </Stat>
-                </GridItem>
-                <GridItem>
-                  <Stat>
-                    <StatLabel>Monthly Expenses</StatLabel>
-                    <StatNumber>${expenses}</StatNumber>
-                    <StatHelpText>
-                      <StatArrow type="decrease" />
-                    </StatHelpText>
-                  </Stat>
-                </GridItem>
-                <GridItem>
-                  <Stat>
-                    <StatLabel>Monthly Savings</StatLabel>
-                    <StatNumber>${savings}</StatNumber>
-                    <StatHelpText>
-                      <StatArrow type="increase" />
-                    </StatHelpText>
-                  </Stat>
-                </GridItem>
-              </Grid>
+              <SimpleGrid columns={3} spacing={4} width="100%">
+                <Stat>
+                  <StatLabel>Monthly Income</StatLabel>
+                  <StatNumber>${scenarios[demoScenario].income}</StatNumber>
+                  <StatHelpText>
+                    <StatArrow type="increase" />
+                  </StatHelpText>
+                </Stat>
+                <Stat>
+                  <StatLabel>Monthly Expenses</StatLabel>
+                  <StatNumber>${scenarios[demoScenario].expenses}</StatNumber>
+                  <StatHelpText>
+                    <StatArrow type="decrease" />
+                  </StatHelpText>
+                </Stat>
+                <Stat>
+                  <StatLabel>Monthly Savings</StatLabel>
+                  <StatNumber>${scenarios[demoScenario].savings}</StatNumber>
+                  <StatHelpText>
+                    <StatArrow type="increase" />
+                  </StatHelpText>
+                </Stat>
+              </SimpleGrid>
 
               <Button 
                 colorScheme="blue" 
+                size="lg" 
+                width="100%" 
                 onClick={startDemo}
                 isLoading={isLoading}
-                loadingText="Analyzing..."
               >
-                Start Demo Analysis
+                Run Financial Analysis
               </Button>
             </VStack>
           </CardBody>
         </Card>
 
-        {error && (
-          <Alert status="error">
-            <AlertIcon />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
         {isLoading && (
-          <Box textAlign="center" py={8}>
+          <Box textAlign="center" py={10}>
             <Spinner size="xl" />
-            <Text mt={4}>Running financial analysis...</Text>
+            <Text mt={4}>Analyzing your financial profile...</Text>
           </Box>
         )}
 
-        {analysisResults && <AnalysisResults {...analysisResults} />}
-
-        <Box bg="gray.50" p={4} borderRadius="md">
-          <Heading size="sm" mb={2}>Security Notice</Heading>
-          <Text fontSize="sm" color="gray.600">
-            This demo mode uses simulated data and does not require any real financial information.
-            Your privacy and security are our top priorities. When you're ready to use real data,
-            you can connect your accounts through our secure, encrypted connection.
-          </Text>
-        </Box>
+        {analysisResults && (
+          <VStack spacing={6} align="stretch">
+            <Heading size="md">Analysis Results</Heading>
+            
+            <Card>
+              <CardBody>
+                <Heading size="sm" mb={4}>Spending Analysis</Heading>
+                <Text fontWeight="bold">Category Breakdown:</Text>
+                <SimpleGrid columns={2} spacing={4} mt={2}>
+                  {Object.entries(analysisResults.spendingAnalysis.categories).map(([category, data]) => (
+                    <Box key={category}>
+                      <Text>{category}: {data.percentage}%</Text>
+                      <Text fontSize="sm" color="gray.600">${data.amount.toFixed(2)}</Text>
+                    </Box>
+                  ))}
+                </SimpleGrid>
+                
+                <Text fontWeight="bold" mt={4}>Recommendations:</Text>
+                <VStack align="start" mt={2}>
+                  {analysisResults.spendingAnalysis.recommendations.map((rec, index) => (
+                    <Text key={index}>• {rec}</Text>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+            
+            <Card>
+              <CardBody>
+                <Heading size="sm" mb={4}>Investment Analysis</Heading>
+                <SimpleGrid columns={3} spacing={4}>
+                  <Stat>
+                    <StatLabel>Portfolio Value</StatLabel>
+                    <StatNumber>${analysisResults.investmentAnalysis.totalValue}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Projected Return</StatLabel>
+                    <StatNumber>{(analysisResults.investmentAnalysis.returnRate * 100).toFixed(1)}%</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Risk Level</StatLabel>
+                    <StatNumber>{analysisResults.investmentAnalysis.riskLevel}</StatNumber>
+                  </Stat>
+                </SimpleGrid>
+                
+                <Text fontWeight="bold" mt={4}>Recommendations:</Text>
+                <VStack align="start" mt={2}>
+                  {analysisResults.investmentAnalysis.recommendations.map((rec, index) => (
+                    <Text key={index}>• {rec}</Text>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        )}
       </VStack>
     </Box>
   );

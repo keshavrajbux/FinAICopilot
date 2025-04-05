@@ -1,4 +1,39 @@
-import { mockTransactions, mockPortfolio, mockMarketData, mockUserContext } from '../../backend/src/tests/utils/testData';
+// Define mock data directly instead of importing from backend
+const mockMarketData = {
+  marketIndices: {
+    sp500: 5200.50,
+    nasdaq: 16500.75,
+    dow: 39000.25
+  },
+  sectorPerformance: {
+    technology: 0.05,
+    healthcare: 0.02,
+    finance: 0.03
+  }
+};
+
+const mockUserContext = {
+  userId: 'test-user-123',
+  riskTolerance: 'moderate',
+  financialGoals: [
+    {
+      type: 'retirement',
+      targetAmount: 1000000,
+      targetDate: '2040-12-31'
+    },
+    {
+      type: 'emergency',
+      targetAmount: 50000,
+      targetDate: '2025-12-31'
+    }
+  ],
+  monthlyBudget: {
+    food: 500,
+    housing: 2000,
+    transportation: 300,
+    entertainment: 200
+  }
+};
 
 class DemoService {
   constructor() {

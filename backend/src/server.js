@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { createClient } = require('@supabase/supabase-js');
 const winston = require('winston');
 const analysisController = require('./controllers/analysisController');
+const monitoringController = require('./controllers/monitoringController');
 
 // Initialize Express app
 const app = express();
@@ -51,6 +52,9 @@ app.use(limiter);
 app.post('/api/analysis/:userId', analysisController.analyzeFinancialHealth);
 app.get('/api/analysis/:userId/history', analysisController.getAnalysisHistory);
 app.get('/api/analysis/:userId/latest', analysisController.getLatestAnalysis);
+
+// New monitoring routes
+app.use('/api/monitoring', monitoringController);
 
 // Basic health check endpoint
 app.get('/api/health', (req, res) => {
