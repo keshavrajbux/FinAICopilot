@@ -33,6 +33,11 @@ export async function generateClaudeResponse(
     
     // Simple fallback for development without API key
     if (!process.env.ANTHROPIC_API_KEY) {
+      console.error({
+        message: 'Claude API Error: No API key configured',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'unknown'
+      });
       console.log('No API key - returning mock data');
       return JSON.stringify(getMockAnalysisResponse());
     }
@@ -60,7 +65,12 @@ export async function generateClaudeResponse(
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Claude API request failed with status: ${response.status}, Error: ${errorText}`);
+        console.error({
+          message: `Claude API Error: Request failed`,
+          status: response.status,
+          errorDetails: errorText,
+          timestamp: new Date().toISOString()
+        });
         console.log('Falling back to local calculations due to API error');
         return JSON.stringify(getMockAnalysisResponse());
       }

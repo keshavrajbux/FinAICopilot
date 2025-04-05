@@ -129,6 +129,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('AI analysis successfully generated');
     } catch (aiError) {
       console.error('Error generating AI analysis:', aiError);
+      // Add more detailed error logging
+      console.warn({
+        message: 'API Fallback: Using local calculations',
+        error: aiError instanceof Error ? aiError.message : String(aiError),
+        timestamp: new Date().toISOString(),
+        financialDataId: userId // for debugging/tracing
+      });
+      
       // Fallback to local calculations
       analysisResults = calculateLocalMetrics(financialData);
       console.log('Using local calculations instead of AI');

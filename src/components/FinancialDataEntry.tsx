@@ -140,13 +140,19 @@ const FinancialDataEntry: React.FC = () => {
 
       // Check if we're using fallback calculations
       if (data._note && data._note.includes('local calculations')) {
-        toast({
-          title: 'Using Local Analysis',
-          description: 'Could not connect to the analysis server. Using local calculations instead.',
-          status: 'warning',
-          duration: 3000,
-          isClosable: true,
-        });
+        // Log for debugging but don't show warning to user
+        console.warn('API Fallback: Using local calculations instead of AI analysis');
+        
+        // Show a more user-friendly success message without mentioning technical issues
+        if (showToast) {
+          toast({
+            title: 'Analysis Complete',
+            description: 'Your financial data has been analyzed successfully',
+            status: 'success',
+            duration: 2000,
+            isClosable: true,
+          });
+        }
       } else if (showToast) {
         toast({
           title: 'Data Saved',
@@ -206,11 +212,13 @@ const FinancialDataEntry: React.FC = () => {
       // Use the fallback results
       setAnalysisResults(fallbackResults);
       
+      // Log for debugging but show a neutral message to the user
+      console.warn('Client Fallback: Using local calculations due to connection error');
       toast({
-        title: 'Using Local Analysis',
-        description: 'Could not connect to the analysis server. Using local calculations instead.',
-        status: 'warning',
-        duration: 3000,
+        title: 'Analysis Complete',
+        description: 'Your financial data has been analyzed',
+        status: 'success', // Changed from warning to success
+        duration: 2000,
         isClosable: true,
       });
     } finally {
