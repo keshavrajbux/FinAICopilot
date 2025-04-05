@@ -98,29 +98,33 @@ Provide me with an analysis of my financial health with personalized recommendat
     }
 
     try {
-      // Try to use Claude first
-      console.log('Attempting to analyze with Claude...');
-      try {
-        // Call the parent's analyze method with the properly formatted messages
-        return await super.analyze(messages);
-      } catch (claudeError) {
-        console.error('Claude analysis failed:', claudeError);
-        
-        // If we have the original data and Claude fails, try OpenAI
-        if (originalData) {
-          console.log('Falling back to OpenAI for analysis...');
+      // Try to use OpenAI first (reversed from original implementation)
+      if (originalData) {
+        console.log('Attempting to analyze with OpenAI first...');
+        try {
+          return await analyzeWithOpenAI(originalData);
+        } catch (openaiError) {
+          console.error('OpenAI analysis failed:', openaiError);
+          
+          // If OpenAI fails, try Claude as fallback
+          console.log('Falling back to Claude for analysis...');
           try {
-            return await analyzeWithOpenAI(originalData);
-          } catch (openaiError) {
-            console.error('OpenAI analysis failed:', openaiError);
-            // If both Claude and OpenAI fail, use local calculations
+            // Call the parent's analyze method with the properly formatted messages
+            return await super.analyze(messages);
+          } catch (claudeError) {
+            console.error('Claude analysis failed:', claudeError);
+            // If both OpenAI and Claude fail, use local calculations
             console.log('Using local calculations as final fallback...');
             return this.calculateLocalMetrics(originalData);
           }
-        } else {
-          // If we only have messages (not the original data), we can't use OpenAI
-          // so we throw the original error
-          throw claudeError;
+        }
+      } else {
+        // If we only have messages (not the original data), try with Claude
+        try {
+          return await super.analyze(messages);
+        } catch (error) {
+          console.error('Claude analysis failed:', error);
+          throw error;
         }
       }
     } catch (error) {
@@ -154,32 +158,64 @@ Provide me with an analysis of my financial health with personalized recommendat
         {
           type: "savings_rate",
           severity: savingsRate >= 20 ? "positive" : savingsRate >= 10 ? "warning" : "critical",
-          message: `Your savings rate is ${savingsRate.toFixed(1)}%`,
-          recommendation: savingsRate < 20 ? "Aim to save at least 20% of your income" : "Keep up the good work!"
+          message: savingsRate >= 20 
+            ? `Impressive! You're saving ${savingsRate.toFixed(1)}% of your income` 
+            : savingsRate >= 10 
+              ? `You're saving ${savingsRate.toFixed(1)}% of your income, which is a good start` 
+              : `Your savings rate of ${savingsRate.toFixed(1)}% puts your financial future at risk`,
+          recommendation: savingsRate < 20 
+            ? "Financial experts recommend saving at least 20% of your income. Try cutting back on non-essential expenses like dining out or subscription services you rarely use." 
+            : "You're on the right track! Consider setting up automatic transfers to investment accounts to put your savings to work."
         },
         {
           type: "emergency_fund",
           severity: emergencyFundMonths >= 6 ? "positive" : emergencyFundMonths >= 3 ? "warning" : "critical",
-          message: `Your emergency fund covers ${emergencyFundMonths.toFixed(1)} months of expenses`,
-          recommendation: emergencyFundMonths < 6 ? "Build an emergency fund covering 3-6 months of expenses" : "Consider investing excess emergency savings"
+          message: emergencyFundMonths >= 6 
+            ? `Peace of mind! Your emergency fund covers ${emergencyFundMonths.toFixed(1)} months of expenses` 
+            : emergencyFundMonths >= 3 
+              ? `Your emergency fund would last ${emergencyFundMonths.toFixed(1)} months - you're halfway there` 
+              : `Your emergency fund would only last ${emergencyFundMonths.toFixed(1)} months, leaving you vulnerable to financial shocks`,
+          recommendation: emergencyFundMonths < 6 
+            ? "Aim to save enough to cover 3-6 months of essential expenses. Start small by setting aside a portion of each paycheck until you reach this goal." 
+            : "Well done! Your emergency fund is well-established. Keep it in a high-yield savings account for easy access while still earning interest."
         },
         {
           type: "debt_ratio",
           severity: debtToIncomeRatio <= 36 ? "positive" : debtToIncomeRatio <= 43 ? "warning" : "critical",
-          message: `Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%`,
-          recommendation: debtToIncomeRatio > 36 ? "Reduce your debt load to improve financial flexibility" : "Your debt level is manageable"
+          message: debtToIncomeRatio <= 36 
+            ? `Excellent! Your debt-to-income ratio is a healthy ${debtToIncomeRatio.toFixed(1)}%` 
+            : debtToIncomeRatio <= 43 
+              ? `Your debt-to-income ratio of ${debtToIncomeRatio.toFixed(1)}% is approaching concerning levels` 
+              : `Warning: Your debt-to-income ratio of ${debtToIncomeRatio.toFixed(1)}% is critically high`,
+          recommendation: debtToIncomeRatio > 36 
+            ? "Focus on paying down high-interest debt first. Consider the snowball method (smallest balances first) or avalanche method (highest interest first) to reduce your debt burden." 
+            : "Your debt is at a manageable level. Consider setting up extra payments toward principal to reduce interest costs over time."
         },
         {
           type: "net_worth",
-          severity: netWorth > 0 ? "positive" : "critical",
-          message: `Your net worth is ${netWorth >= 0 ? '$' + netWorth.toFixed(0) : '-$' + Math.abs(netWorth).toFixed(0)}`,
-          recommendation: netWorth < 0 ? "Focus on paying down debts to achieve a positive net worth" : "Continue building assets to increase your net worth"
+          severity: netWorth > data.monthlyIncome * 12 ? "positive" : netWorth > 0 ? "warning" : "critical",
+          message: netWorth > data.monthlyIncome * 12 
+            ? `Congratulations! Your net worth of $${netWorth.toLocaleString()} exceeds your annual income` 
+            : netWorth > 0 
+              ? `Your net worth is $${netWorth.toLocaleString()} - positive, but there's room for growth` 
+              : `Your net worth is negative at -$${Math.abs(netWorth).toLocaleString()}, which means you owe more than you own`,
+          recommendation: netWorth < 0 
+            ? "Your financial priority should be shifting to positive net worth. Create a debt reduction plan, avoid taking on more debt, and focus on increasing your income." 
+            : netWorth < data.monthlyIncome * 12 
+              ? "Build wealth by increasing your savings rate and investment contributions. Even small, consistent contributions can grow significantly over time." 
+              : "You're building wealth effectively! Consider diversifying your investments and exploring tax-advantaged accounts to protect and grow your assets."
         },
         {
           type: "investments",
           severity: investmentToNetWorthRatio >= 40 ? "positive" : investmentToNetWorthRatio >= 20 ? "warning" : "critical",
-          message: `Investments make up ${investmentToNetWorthRatio.toFixed(1)}% of your net worth`,
-          recommendation: investmentToNetWorthRatio < 40 ? "Consider increasing your investment allocations for long-term growth" : "Your investment allocation looks good"
+          message: investmentToNetWorthRatio >= 40 
+            ? `Smart move! ${investmentToNetWorthRatio.toFixed(1)}% of your net worth is invested for growth` 
+            : investmentToNetWorthRatio >= 20 
+              ? `${investmentToNetWorthRatio.toFixed(1)}% of your net worth is invested, which is a decent start` 
+              : `Only ${investmentToNetWorthRatio.toFixed(1)}% of your net worth is invested, limiting your future financial growth`,
+          recommendation: investmentToNetWorthRatio < 40 
+            ? "Consider increasing your investment allocation. Look into low-cost index funds or ETFs for long-term growth with minimal management required." 
+            : "Your investment allocation looks good! Make sure your portfolio is properly diversified across different asset classes to manage risk."
         }
       ]
     };

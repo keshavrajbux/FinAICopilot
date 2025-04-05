@@ -1,9 +1,12 @@
 import React from 'react';
-import { Box, Heading, Container, Tabs, TabList, TabPanels, Tab, TabPanel, Text } from '@chakra-ui/react';
+import { Box, Heading, Container, Tabs, TabList, TabPanels, Tab, TabPanel, Text, useColorModeValue } from '@chakra-ui/react';
 import FinancialDataEntry from '@/components/FinancialDataEntry';
 import Head from 'next/head';
+import NextLink from 'next/link';
 
 export default function Home() {
+  const bgColor = useColorModeValue('purple.50', 'gray.900');
+
   return (
     <>
       <Head>
@@ -13,7 +16,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Box minH="100vh" bg="gray.50">
+      <Box minH="100vh" bg={bgColor}>
         {/* Header */}
         <Box 
           bg="purple.500" 
@@ -45,20 +48,11 @@ export default function Home() {
           <Tabs colorScheme="purple" variant="enclosed">
             <TabList>
               <Tab _selected={{ bg: 'purple.50', borderColor: 'purple.500' }}>My Finances</Tab>
-              <Tab _selected={{ bg: 'purple.50', borderColor: 'purple.500' }}>Data Connect</Tab>
+              <Tab as={NextLink} href="/data-connect" _selected={{ bg: 'purple.50', borderColor: 'purple.500' }}>Link Financial Accounts $$$</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
                 <FinancialDataEntry />
-              </TabPanel>
-              <TabPanel>
-                <Box textAlign="center" p={8}>
-                  <Heading size="md" color="purple.500">Data Connections</Heading>
-                  <Box mt={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
-                    <Text color="purple.700">Connect to financial data sources to enhance your analysis.</Text>
-                    <Text color="purple.600" mt={2}>This feature will be available soon.</Text>
-                  </Box>
-                </Box>
               </TabPanel>
             </TabPanels>
           </Tabs>

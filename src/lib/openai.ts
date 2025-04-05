@@ -68,22 +68,29 @@ Format your response as a JSON object with the following schema:
           }
         ],
         temperature: 0.7,
-        max_tokens: 1500
+        max_tokens: 1500,
+        response_format: { type: "json_object" }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`OpenAI API request failed: ${response.status}`, errorText);
-      return getMockAnalysisResponse(financialData);
+      throw new Error(`OpenAI API Error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices.length) {
+      console.error('Invalid response structure from OpenAI:', data);
+      throw new Error('Invalid response from OpenAI - missing choices');
+    }
+    
     const result = data.choices[0]?.message?.content;
 
     if (!result) {
-      console.error('Invalid response from OpenAI');
-      return getMockAnalysisResponse(financialData);
+      console.error('Invalid response from OpenAI - missing content');
+      throw new Error('Invalid response from OpenAI - missing content');
     }
 
     try {
@@ -93,7 +100,7 @@ Format your response as a JSON object with the following schema:
     } catch (parseError) {
       console.error('Failed to parse OpenAI response as JSON:', parseError);
       console.log('Raw response:', result);
-      return getMockAnalysisResponse(financialData);
+      throw new Error('Failed to parse OpenAI response as JSON');
     }
   } catch (error) {
     console.error('Error using OpenAI for analysis:', error);

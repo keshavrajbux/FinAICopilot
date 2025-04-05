@@ -99,19 +99,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dbClient = supabaseAdmin || supabase;
     
     // Save financial data to Supabase
+    let dataSaved = false;
     try {
-      const { error: saveError } = await dbClient
+      // Output the client being used for debugging
+      console.log('Using database client:', dbClient ? (supabaseAdmin ? 'admin client' : 'regular client') : 'no client available');
+      
+      // Check if Supabase URL and key are configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.error('Supabase environment variables not configured properly.');
+        console.log('NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+        console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+        throw new Error('Database configuration missing');
+      }
+      
+      if (!dbClient) {
+        console.error('No database client available');
+        throw new Error('Database connection not available');
+      }
+      
+      // First, check if the table exists before attempting to insert
+      try {
+        // Supabase doesn't have a direct "table exists" query, but we can try to select from it
+        const { count, error: checkError } = await dbClient
+          .from('financial_data')
+          .select('*', { count: 'exact', head: true })
+          .limit(0);
+          
+        if (checkError) {
+          console.error('Table check error - table may not exist:', checkError);
+          throw new Error(`Table check failed: ${checkError.message}`);
+        }
+        
+        console.log('Table check successful, count:', count);
+      } catch (tableCheckError) {
+        console.error('Error checking if table exists:', tableCheckError);
+        throw new Error('Database table does not exist or is not accessible');
+      }
+      
+      // Now attempt the insert
+      const { data, error: saveError } = await dbClient
         .from('financial_data')
         .insert([{
           user_id: userId,
-          financial_data: financialData
+          financial_data: financialData,
+          created_at: new Date().toISOString()
         }]);
 
       if (saveError) {
         console.error('Error saving financial data:', saveError);
-        // Continue with analysis even if data saving fails
+        
+        // Check policy issues - might be RLS related
+        if (saveError.message && saveError.message.includes('permission denied')) {
+          console.error('Permission denied error - likely RLS policy issue');
+          console.log('Attempting with demo user ID:', userId);
+        }
+        
+        throw new Error(`Failed to save data: ${saveError.message}`);
       } else {
-        console.log('Financial data saved successfully');
+        console.log('Financial data saved successfully', data);
+        dataSaved = true;
       }
     } catch (dbError) {
       console.error('Database error saving financial data:', dbError);
@@ -127,6 +173,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // The analyze method now accepts FinancialData directly
       analysisResults = await analysisAgent.analyze(financialData);
       console.log('AI analysis successfully generated');
+      
+      // Try to save analysis results if we have a client
+      if (dbClient) {
+        try {
+          const { error: analysisError } = await dbClient
+            .from('financial_analyses')
+            .insert([{
+              user_id: userId,
+              analysis_data: analysisResults
+            }]);
+  
+          if (analysisError) {
+            console.error('Error saving analysis:', analysisError);
+          } else {
+            console.log('Analysis saved successfully');
+          }
+        } catch (analysisDbError) {
+          console.error('Database error saving analysis:', analysisDbError);
+        }
+      }
     } catch (aiError) {
       console.error('Error generating AI analysis:', aiError);
       // Add more detailed error logging
@@ -142,27 +208,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Using local calculations instead of AI');
     }
 
-    // Try to save analysis results to Supabase using admin client if available
-    try {
-      const { error: analysisError } = await dbClient
-        .from('financial_analyses')
-        .insert([{
-          user_id: userId,
-          analysis_data: analysisResults
-        }]);
-
-      if (analysisError) {
-        console.error('Error saving analysis:', analysisError);
-        // Continue even if analysis saving fails
-      } else {
-        console.log('Analysis saved successfully');
+    // Include data saving status in the response
+    return res.status(200).json({
+      ...analysisResults,
+      _meta: {
+        dataSaved,
+        timestamp: new Date().toISOString()
       }
-    } catch (analysisDbError) {
-      console.error('Database error saving analysis:', analysisDbError);
-      // Continue even if analysis saving fails
-    }
-
-    return res.status(200).json(analysisResults);
+    });
   } catch (error) {
     console.error('Error in analyze-finances API:', error);
     
@@ -173,7 +226,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const fallbackResults = calculateLocalMetrics(financialData);
         return res.status(200).json({
           ...fallbackResults,
-          _note: 'Using local calculations due to server error'
+          _note: 'Using local calculations due to server error',
+          _error: error instanceof Error ? error.message : 'Unknown error occurred'
         });
       }
     } catch (fallbackError) {
@@ -182,7 +236,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      timestamp: new Date().toISOString()
     });
   }
 } 

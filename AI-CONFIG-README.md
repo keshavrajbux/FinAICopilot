@@ -1,83 +1,79 @@
-# AI Integration Configuration
+# Financial Decision Copilot - AI Configuration Guide
 
-This application supports multiple AI providers for financial analysis. You can choose to use either Claude AI or OpenAI (or both as fallbacks).
+This guide explains how to set up and utilize the AI capabilities in the Financial Decision Copilot, including API configurations and troubleshooting.
 
-## API Key Configuration
+## API Keys and Environment Configuration
 
-### Setting Up Your API Keys
+To get started, you need to set up your environment variables:
 
-1. **Create an `.env.local` file** in the root of your project (if not already created)
-2. **Add your API keys** to the file:
+1. Create a `.env.local` file in the root directory of the project
+2. Add the following variables:
 
 ```
-# Supabase Configuration
+# Supabase Configuration (for data storage)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Claude API Configuration (Optional)
+# OpenAI API Configuration (primary provider)
+OPENAI_API_KEY=your_openai_api_key
+
+# Claude API Configuration (secondary/fallback provider)
 ANTHROPIC_API_KEY=your_anthropic_api_key
 
-# OpenAI API Configuration (Optional, but recommended)
-OPENAI_API_KEY=your_openai_api_key
+# Application Settings
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-You can use either Claude, OpenAI, or both. The application will automatically:
-1. Try Claude first (if configured)
-2. Fall back to OpenAI if Claude fails (if configured)
-3. Use local calculations as a final fallback
+## AI Provider Prioritization
+
+The Financial Decision Copilot now uses a tiered approach for financial analysis:
+
+1. **Primary: OpenAI API** - The application first attempts to use OpenAI for analysis
+2. **Secondary: Claude API** - If OpenAI fails, the app falls back to using Claude
+3. **Final Fallback: Local Calculations** - If both APIs fail, the app uses local calculations
 
 ## Database Setup
 
-The application requires Supabase tables for storing financial data and analyses.
+The application stores financial data and analysis results in Supabase. To set up your database:
 
-### Setting Up the Database
+1. Create a Supabase account and project at [supabase.com](https://supabase.com)
+2. Get your project URL and API keys from the Supabase dashboard
+3. Run the database setup script: `node setup-database.js`
 
-1. **Log in to your Supabase dashboard**
-2. **Navigate to the SQL Editor**
-3. **Run the setup script** from the `setup-database.sql` file included in this project
+## Troubleshooting Common Issues
 
-This will create:
-- `financial_data` table: For storing user financial data
-- `financial_analyses` table: For storing AI-generated analyses
+### API Key Issues
 
-## Fallback Mechanism
+- **OpenAI API Errors**: Ensure your OpenAI API key is valid and has sufficient credits. The app will fall back to Claude if there are issues.
+- **Claude API Errors**: If you see "Claude API Error" messages, check that your Anthropic API key is correctly set and has sufficient usage limits.
+- **Missing API Keys**: If you don't configure any AI provider keys, the application will use local calculations only.
 
-The application uses a tiered fallback approach:
+### Database Issues
 
-1. **Claude AI** - Primary AI provider with comprehensive analysis capabilities
-2. **OpenAI** - Secondary AI provider used when Claude is unavailable
-3. **Local Calculations** - Basic calculations performed client-side when AI is unavailable
-
-### When Using With OpenAI Free Credits
-
-If you're using OpenAI's free tier:
-
-1. Set the `OPENAI_API_KEY` in your `.env.local` file
-2. Leave `ANTHROPIC_API_KEY` blank or remove it
-3. The application will automatically bypass Claude and use OpenAI directly
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Using Local Analysis" message appears**
-   - Check that your API keys are correctly configured
-   - Verify you have sufficient API credits on your account
-
-2. **Data not saving to database**
-   - Ensure your Supabase URL and keys are correct
-   - Run the database setup script to create the necessary tables
-   - Check that your service role key has proper permissions
-
-3. **Error with Claude API**
-   - Claude requires a paid subscription - if you're using the free trial, credits may have expired
-   - Use OpenAI as an alternative by providing an OpenAI API key
+- **Data Not Saving**: Check your Supabase configuration in the `.env.local` file
+- **Table Not Found**: Run the database setup script to create the required tables
+- **Permission Denied**: Ensure Row Level Security (RLS) policies are correctly set up
 
 ## Advanced Configuration
 
-If you want to modify the AI behavior, you can adjust:
+### Switching AI Providers
 
-- **Model selection**: Change the model in `src/lib/claude.ts` or `src/lib/openai.ts`
-- **Prompt engineering**: Modify the prompts in the financial analysis agent
-- **Fallback logic**: Adjust the order of fallbacks in `src/lib/financial-analysis-agent.ts` 
+While OpenAI is now the default, you can adjust the prioritization:
+
+1. To use Claude as primary again, modify the `analyze` method in `src/lib/financial-analysis-agent.ts`
+2. To use only one provider, simply omit the API key for the provider you don't want to use
+
+### Model Selection
+
+- OpenAI: You can change the OpenAI model used in `src/lib/openai.ts` (default is `gpt-3.5-turbo`)
+- Claude: You can change the Claude model used in `src/lib/claude.ts` (default is `claude-3-haiku-20240307`)
+
+## Using Development Mode
+
+Access development tools and diagnostics by:
+
+1. Adding `?devMode=true` to any page URL
+2. Setting `NODE_ENV=development` in your environment
+
+This will show additional technical information and debugging options in the UI. 

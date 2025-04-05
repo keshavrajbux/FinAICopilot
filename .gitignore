@@ -2,6 +2,7 @@
 /node_modules
 /.pnp
 .pnp.js
+backend/node_modules
 
 # testing
 /coverage
@@ -42,4 +43,17 @@ logs
 
 # Typescript
 *.tsbuildinfo
-next-env.d.ts 
+next-env.d.ts
+
+# Temp/Cache files
+/Temp
+/Temp/*
+**/Temp
+**/Temp/*
+FSTimeGet-*
+
+# Other
+.git-old/
+.backup
+*~
+.cache 
