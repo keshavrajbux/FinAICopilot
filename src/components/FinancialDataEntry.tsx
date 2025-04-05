@@ -33,6 +33,8 @@ import {
   StatNumber,
   StatHelpText,
   StatArrow,
+  CircularProgress,
+  CircularProgressLabel
 } from '@chakra-ui/react';
 import { FaWallet, FaCreditCard, FaChartLine, FaMoneyBillWave, FaClipboardCheck, FaSave, FaDatabase } from 'react-icons/fa';
 import { FinancialData, AnalysisResults } from '@/lib/financial-analysis-agent';
@@ -43,7 +45,9 @@ const FinancialDataEntry: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
   const cardBg = useColorModeValue('white', 'gray.800');
-  const accentColor = useColorModeValue('blue.500', 'blue.300');
+  const accentColor = useColorModeValue('purple.300', 'purple.400');
+  const bgColor = useColorModeValue('purple.50', 'gray.900');
+  const textColor = useColorModeValue('purple.800', 'purple.100');
   
   // Financial data state - simplified to essential fields
   const [financialData, setFinancialData] = useState<FinancialData>({
@@ -116,7 +120,7 @@ const FinancialDataEntry: React.FC = () => {
   };
 
   // Save financial data directly via API
-  const saveFinancialData = async () => {
+  const saveFinancialData = async (showToast = true) => {
     setIsSaving(true);
     try {
       const response = await fetch('/api/analyze-finances', {
@@ -134,19 +138,78 @@ const FinancialDataEntry: React.FC = () => {
       const data = await response.json();
       setAnalysisResults(data);
 
-      toast({
-        title: 'Data Saved',
-        description: 'Your financial data has been saved and analyzed',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
+      // Check if we're using fallback calculations
+      if (data._note && data._note.includes('local calculations')) {
+        toast({
+          title: 'Using Local Analysis',
+          description: 'Could not connect to the analysis server. Using local calculations instead.',
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else if (showToast) {
+        toast({
+          title: 'Data Saved',
+          description: 'Your financial data has been saved and analyzed',
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
       console.error('Error in saving financial data:', error);
+      
+      // Generate client-side fallback analysis
+      const monthlySavings = financialData.monthlyIncome - financialData.monthlyExpenses;
+      const savingsRate = financialData.monthlyIncome > 0 ? (monthlySavings / financialData.monthlyIncome) * 100 : 0;
+      const netWorth = financialData.savings + financialData.investments - financialData.debt;
+      const emergencyFundMonths = financialData.monthlyExpenses > 0 ? financialData.savings / financialData.monthlyExpenses : 0;
+      const debtToIncomeRatio = financialData.monthlyIncome > 0 ? (financialData.debt / (financialData.monthlyIncome * 12)) * 100 : 0;
+      
+      // Create fallback analysis results
+      const fallbackResults: AnalysisResults = {
+        metrics: {
+          savingsRate,
+          netWorth,
+          emergencyFundMonths,
+          debtToIncomeRatio,
+          monthlySavings
+        },
+        insights: [
+          {
+            type: "savings_rate",
+            severity: savingsRate >= 20 ? "positive" : (savingsRate >= 10 ? "warning" : "critical"),
+            message: `Your savings rate is ${savingsRate.toFixed(1)}%`,
+            recommendation: savingsRate < 20 ? "Aim to save at least 20% of your income" : "Keep up the good work!"
+          },
+          {
+            type: "emergency_fund",
+            severity: emergencyFundMonths >= 6 ? "positive" : (emergencyFundMonths >= 3 ? "warning" : "critical"),
+            message: `Your emergency fund covers ${emergencyFundMonths.toFixed(1)} months of expenses`,
+            recommendation: emergencyFundMonths < 6 ? "Build an emergency fund covering 3-6 months of expenses" : "Consider investing excess emergency savings"
+          },
+          {
+            type: "debt_ratio",
+            severity: debtToIncomeRatio <= 36 ? "positive" : (debtToIncomeRatio <= 43 ? "warning" : "critical"),
+            message: `Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%`,
+            recommendation: debtToIncomeRatio > 36 ? "Reduce your debt load to improve financial flexibility" : "Your debt level is manageable"
+          },
+          {
+            type: "net_worth",
+            severity: netWorth > 0 ? "positive" : "critical",
+            message: `Your net worth is ${netWorth >= 0 ? '$' + netWorth.toFixed(0) : '-$' + Math.abs(netWorth).toFixed(0)}`,
+            recommendation: netWorth < 0 ? "Focus on paying down debts to achieve a positive net worth" : "Continue building assets to increase your net worth"
+          }
+        ]
+      };
+      
+      // Use the fallback results
+      setAnalysisResults(fallbackResults);
+      
       toast({
-        title: 'Error',
-        description: 'Failed to save your financial data',
-        status: 'error',
+        title: 'Using Local Analysis',
+        description: 'Could not connect to the analysis server. Using local calculations instead.',
+        status: 'warning',
         duration: 3000,
         isClosable: true,
       });
@@ -159,7 +222,7 @@ const FinancialDataEntry: React.FC = () => {
   // Analyze finances using Claude API via our API endpoint
   const analyzeFinances = async () => {
     setIsLoading(true);
-    await saveFinancialData();
+    await saveFinancialData(false); // Don't show toast during analysis
   };
 
   // Financial Health Score calculation
@@ -211,26 +274,60 @@ const FinancialDataEntry: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Container maxW="container.xl" py={6}>
+    <Box 
+      minH="100vh" 
+      bg={bgColor}
+      position="relative"
+      _before={{
+        content: '""',
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23E9D8FD\" opacity=\"0.1\"><text x=\"50\" y=\"50\" font-family=\"Arial\" font-size=\"60\" text-anchor=\"middle\" dominant-baseline=\"middle\">$</text></svg>')",
+        backgroundRepeat: "repeat",
+        backgroundSize: "100px",
+        opacity: 0.1,
+        zIndex: 0
+      }}
+    >
+      <Container maxW="container.xl" py={6} position="relative" zIndex={1}>
         <VStack spacing={8} align="stretch">
           <Box textAlign="center" mb={4}>
             <Heading 
               size="xl" 
-              bgGradient="linear(to-r, blue.400, purple.500)" 
+              bgGradient="linear(to-r, purple.400, purple.600)" 
               bgClip="text"
               mb={2}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              gap={2}
             >
-              Financial Pulse
+              <Text>finAI agent</Text>
+              <Text fontSize="2xl" color="purple.500">$$$</Text>
             </Heading>
-            <Text color="gray.600">
+            <Text color={textColor} fontSize="lg">
               Get quick insights into your financial health with a few simple inputs
             </Text>
           </Box>
           
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
             {/* Input Section */}
-            <Card bg={cardBg} shadow="md" borderRadius="lg" overflow="hidden">
+            <Card 
+              bg={cardBg} 
+              shadow="lg" 
+              borderRadius="lg" 
+              overflow="hidden"
+              border="1px solid"
+              borderColor="purple.100"
+              _hover={{
+                transform: 'translateY(-2px)',
+                transition: 'all 0.2s',
+                boxShadow: 'xl'
+              }}
+            >
               <CardBody>
                 <VStack spacing={6} align="stretch">
                   <Flex justifyContent="space-between" alignItems="center">
@@ -241,9 +338,9 @@ const FinancialDataEntry: React.FC = () => {
                     <Button 
                       size="sm" 
                       leftIcon={<FaSave />} 
-                      colorScheme="green" 
+                      colorScheme="purple" 
                       variant="outline"
-                      onClick={saveFinancialData}
+                      onClick={() => saveFinancialData(true)}
                       isLoading={isSaving}
                     >
                       Save Data
@@ -391,7 +488,7 @@ const FinancialDataEntry: React.FC = () => {
                   </FormControl>
                   
                   <Button 
-                    colorScheme="blue" 
+                    colorScheme="purple" 
                     size="lg" 
                     onClick={analyzeFinances}
                     isLoading={isLoading}
@@ -404,7 +501,7 @@ const FinancialDataEntry: React.FC = () => {
                     Analyze My Finances
                   </Button>
                   
-                  <Text fontSize="xs" color="gray.500" textAlign="center">
+                  <Text fontSize="xs" color={textColor} textAlign="center">
                     <Icon as={FaDatabase} mr={1} />
                     Data is saved and analyzed in your Supabase account
                   </Text>
@@ -413,14 +510,26 @@ const FinancialDataEntry: React.FC = () => {
             </Card>
             
             {/* Results Section */}
-            <Card bg={cardBg} shadow="md" borderRadius="lg" overflow="hidden">
+            <Card 
+              bg={cardBg} 
+              shadow="lg" 
+              borderRadius="lg" 
+              overflow="hidden"
+              border="1px solid"
+              borderColor="purple.100"
+              _hover={{
+                transform: 'translateY(-2px)',
+                transition: 'all 0.2s',
+                boxShadow: 'xl'
+              }}
+            >
               <CardBody>
                 {!analysisResults ? (
                   <VStack spacing={6} align="stretch" justify="center" height="100%" opacity={0.7}>
                     <Box textAlign="center" py={10}>
-                      <Icon as={FaClipboardCheck} boxSize={16} color="gray.300" mb={4} />
-                      <Heading size="md" color="gray.500">Enter your financial data</Heading>
-                      <Text color="gray.500" mt={2}>
+                      <Icon as={FaClipboardCheck} boxSize={16} color="purple.300" mb={4} />
+                      <Heading size="md" color={textColor}>Enter your financial data</Heading>
+                      <Text color={textColor} mt={2}>
                         Then click "Analyze My Finances" to see your personalized financial insights
                       </Text>
                     </Box>
@@ -442,19 +551,11 @@ const FinancialDataEntry: React.FC = () => {
                           value={calculateFinancialHealthScore()} 
                           color={getScoreColor(calculateFinancialHealthScore())}
                           thickness="8px"
-                        />
-                        <Box
-                          position="absolute"
-                          top="50%"
-                          left="50%"
-                          transform="translate(-50%, -50%)"
-                          textAlign="center"
                         >
-                          <Text fontSize="2xl" fontWeight="bold">
+                          <CircularProgressLabel>
                             {calculateFinancialHealthScore()}
-                          </Text>
-                          <Text fontSize="xs">out of 100</Text>
-                        </Box>
+                          </CircularProgressLabel>
+                        </CircularProgress>
                       </Box>
                     </Flex>
                     
@@ -516,45 +617,6 @@ const FinancialDataEntry: React.FC = () => {
         </VStack>
       </Container>
     </Box>
-  );
-};
-
-// Custom circular progress component
-const CircularProgress: React.FC<{
-  size: string;
-  value: number;
-  color: string;
-  thickness: string;
-}> = ({ size, value, color, thickness }) => {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (value / 100) * circumference;
-  const dashoffset = circumference - progress;
-  
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100">
-      <circle
-        cx="50"
-        cy="50"
-        r={radius}
-        fill="none"
-        stroke="gray.100"
-        strokeWidth={thickness}
-        opacity="0.2"
-      />
-      <circle
-        cx="50"
-        cy="50"
-        r={radius}
-        fill="none"
-        stroke={color}
-        strokeWidth={thickness}
-        strokeDasharray={circumference}
-        strokeDashoffset={dashoffset}
-        strokeLinecap="round"
-        transform="rotate(-90 50 50)"
-      />
-    </svg>
   );
 };
 

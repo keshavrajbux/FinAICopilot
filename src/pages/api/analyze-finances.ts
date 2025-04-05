@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createRouteHandler } from '@supabase/auth-helpers-nextjs';
-import { FinancialAnalysisAgent, FinancialData } from '@/lib/financial-analysis-agent';
-import supabase from '@/lib/supabase';
+import { FinancialAnalysisAgent, FinancialData, AnalysisResults } from '@/lib/financial-analysis-agent';
+import supabase, { supabaseAdmin } from '@/lib/supabase';
 
 // Data validation
 const validateFinancialData = (data: any): data is FinancialData => {
@@ -15,60 +14,167 @@ const validateFinancialData = (data: any): data is FinancialData => {
   );
 };
 
+// Calculate metrics locally as a fallback
+const calculateLocalMetrics = (data: FinancialData): AnalysisResults => {
+  const monthlySavings = data.monthlyIncome - data.monthlyExpenses;
+  const savingsRate = data.monthlyIncome > 0 ? (monthlySavings / data.monthlyIncome) * 100 : 0;
+  const netWorth = data.savings + data.investments - data.debt;
+  const emergencyFundMonths = data.monthlyExpenses > 0 ? data.savings / data.monthlyExpenses : 0;
+  const debtToIncomeRatio = data.monthlyIncome > 0 ? (data.debt / (data.monthlyIncome * 12)) * 100 : 0;
+  
+  return {
+    metrics: {
+      savingsRate,
+      netWorth,
+      emergencyFundMonths,
+      debtToIncomeRatio,
+      monthlySavings
+    },
+    insights: [
+      {
+        type: "savings_rate",
+        severity: savingsRate >= 20 ? "positive" : savingsRate >= 10 ? "warning" : "critical",
+        message: `Your savings rate is ${savingsRate.toFixed(1)}%`,
+        recommendation: savingsRate < 20 ? "Aim to save at least 20% of your income" : "Keep up the good work!"
+      },
+      {
+        type: "emergency_fund",
+        severity: emergencyFundMonths >= 6 ? "positive" : emergencyFundMonths >= 3 ? "warning" : "critical",
+        message: `Your emergency fund covers ${emergencyFundMonths.toFixed(1)} months of expenses`,
+        recommendation: emergencyFundMonths < 6 ? "Build an emergency fund covering 3-6 months of expenses" : "Consider investing excess emergency savings"
+      },
+      {
+        type: "debt_ratio",
+        severity: debtToIncomeRatio <= 36 ? "positive" : debtToIncomeRatio <= 43 ? "warning" : "critical",
+        message: `Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%`,
+        recommendation: debtToIncomeRatio > 36 ? "Reduce your debt load to improve financial flexibility" : "Your debt level is manageable"
+      },
+      {
+        type: "net_worth",
+        severity: netWorth > 0 ? "positive" : "critical",
+        message: `Your net worth is ${netWorth >= 0 ? '$' + netWorth.toFixed(0) : '-$' + Math.abs(netWorth).toFixed(0)}`,
+        recommendation: netWorth < 0 ? "Focus on paying down debts to achieve a positive net worth" : "Continue building assets to increase your net worth"
+      }
+    ]
+  };
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Enable CORS for development
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,DELETE,PATCH,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+  
+  // Handle OPTIONS request for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   // Only allow POST method
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  console.log('Analyze finances API called');
+  
   try {
-    // Check for valid user session
-    // const { user } = await supabase.auth.getUser();
     // Using a demo user ID for now - in production, use authenticated user
     const userId = 'demo-user-123'; // Replace with user.id in production
 
     // Get financial data from request body
     const financialData = req.body;
+    console.log('Received financial data:', financialData);
 
     // Validate data
     if (!validateFinancialData(financialData)) {
-      return res.status(400).json({ error: 'Invalid financial data' });
+      console.error('Invalid financial data format:', financialData);
+      return res.status(400).json({ error: 'Invalid financial data format' });
     }
 
-    // Create the financial analysis agent and get analysis
-    const agent = new FinancialAnalysisAgent();
-    const analysisResults = await agent.analyzeFinancialData(financialData);
+    // Choose the appropriate client - use admin client if available, otherwise fallback to regular client
+    const dbClient = supabaseAdmin || supabase;
+    
+    // Save financial data to Supabase
+    try {
+      const { error: saveError } = await dbClient
+        .from('financial_data')
+        .insert([{
+          user_id: userId,
+          financial_data: financialData
+        }]);
 
-    // Store financial data in Supabase
-    const { error: dataError } = await supabase
-      .from('financial_data')
-      .insert([{
-        user_id: userId,
-        financial_data: financialData,
-        created_at: new Date().toISOString()
-      }]);
-
-    if (dataError) {
-      console.error('Error storing financial data:', dataError);
+      if (saveError) {
+        console.error('Error saving financial data:', saveError);
+        // Continue with analysis even if data saving fails
+      } else {
+        console.log('Financial data saved successfully');
+      }
+    } catch (dbError) {
+      console.error('Database error saving financial data:', dbError);
+      // Continue with analysis even if data saving fails
     }
 
-    // Store analysis results in Supabase
-    const { error: analysisError } = await supabase
-      .from('financial_analyses')
-      .insert([{
-        user_id: userId,
-        analysis_data: analysisResults,
-        created_at: new Date().toISOString()
-      }]);
-
-    if (analysisError) {
-      console.error('Error storing analysis:', analysisError);
+    let analysisResults: AnalysisResults;
+    
+    try {
+      // Try to get analysis from AI agent
+      const analysisAgent = new FinancialAnalysisAgent();
+      
+      // The analyze method now accepts FinancialData directly
+      analysisResults = await analysisAgent.analyze(financialData);
+      console.log('AI analysis successfully generated');
+    } catch (aiError) {
+      console.error('Error generating AI analysis:', aiError);
+      // Fallback to local calculations
+      analysisResults = calculateLocalMetrics(financialData);
+      console.log('Using local calculations instead of AI');
     }
 
-    // Return the analysis results
+    // Try to save analysis results to Supabase using admin client if available
+    try {
+      const { error: analysisError } = await dbClient
+        .from('financial_analyses')
+        .insert([{
+          user_id: userId,
+          analysis_data: analysisResults
+        }]);
+
+      if (analysisError) {
+        console.error('Error saving analysis:', analysisError);
+        // Continue even if analysis saving fails
+      } else {
+        console.log('Analysis saved successfully');
+      }
+    } catch (analysisDbError) {
+      console.error('Database error saving analysis:', analysisDbError);
+      // Continue even if analysis saving fails
+    }
+
     return res.status(200).json(analysisResults);
   } catch (error) {
-    console.error('Error in financial analysis:', error);
-    return res.status(500).json({ error: 'Failed to analyze financial data' });
+    console.error('Error in analyze-finances API:', error);
+    
+    // If an error occurs, return local calculations as fallback
+    try {
+      const financialData = req.body;
+      if (validateFinancialData(financialData)) {
+        const fallbackResults = calculateLocalMetrics(financialData);
+        return res.status(200).json({
+          ...fallbackResults,
+          _note: 'Using local calculations due to server error'
+        });
+      }
+    } catch (fallbackError) {
+      console.error('Error generating fallback analysis:', fallbackError);
+    }
+    
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
   }
 } 
