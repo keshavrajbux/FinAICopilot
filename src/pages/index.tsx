@@ -2,10 +2,11 @@ import React from 'react';
 import { Box, Heading, Container, Tabs, TabList, TabPanels, Tab, TabPanel, Text, useColorModeValue } from '@chakra-ui/react';
 import FinancialDataEntry from '@/components/FinancialDataEntry';
 import Head from 'next/head';
-import NextLink from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function Home() {
   const bgColor = useColorModeValue('purple.50', 'gray.900');
+  const router = useRouter();
 
   return (
     <>
@@ -48,7 +49,13 @@ export default function Home() {
           <Tabs colorScheme="purple" variant="enclosed">
             <TabList>
               <Tab _selected={{ bg: 'purple.50', borderColor: 'purple.500' }}>My Finances</Tab>
-              <Tab as={NextLink} href="/data-connect" _selected={{ bg: 'purple.50', borderColor: 'purple.500' }}>Link Financial Accounts $$$</Tab>
+              <Tab 
+                onClick={() => router.push('/data-connect')}
+                _selected={{ bg: 'purple.50', borderColor: 'purple.500' }}
+                cursor="pointer"
+              >
+                Link Financial Accounts $$$
+              </Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
