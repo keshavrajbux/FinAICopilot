@@ -1,7 +1,7 @@
 # Financial Decision Copilot - Development Progress
 
 ## Project Overview
-A financial analysis and decision-making tool with AI-powered insights, built with React.js, Node.js, Express, Supabase, and OpenAI.
+A financial analysis and decision-making tool with AI-powered insights, built with Next.js, TypeScript, Chakra UI, Supabase and Claude AI.
 
 ## Changelog
 
@@ -72,6 +72,60 @@ Created two tables in Supabase:
 - user_id (text)
 - analysis_data (jsonb)
 - created_at (timestamptz)
+
+### Date: [Current Date] - Architecture Refactoring for Vercel & Claude AI
+
+#### Major Changes
+- Transitioned from separate frontend/backend architecture to a monolithic Next.js application
+- Configured for deployment on Vercel's platform
+- Switched from OpenAI GPT to Anthropic's Claude AI
+- Implemented TypeScript for better type safety and development experience
+
+#### Key Components Added/Modified
+1. **Monolithic Structure**
+   - Consolidated frontend and backend into a single Next.js application
+   - Created API routes using Next.js serverless functions
+   - Simplified deployment and hosting requirements
+
+2. **Claude AI Integration**
+   - Implemented Claude API client for financial analysis
+   - Created specialized financial analysis agent using Claude
+   - Updated prompts and response parsing for Claude's capabilities
+
+3. **Enhanced TypeScript Support**
+   - Added TypeScript interfaces for all data structures
+   - Implemented type-safe API routes
+   - Enhanced component props with proper typing
+
+4. **Vercel Configuration**
+   - Added vercel.json for deployment configuration
+   - Optimized build settings for Vercel's serverless platform
+   - Configured environment variables for Vercel deployment
+
+#### Project Structure Changes
+```
+FinAICopilot/
+├── src/
+│   ├── components/           # React components
+│   │   └── ...
+│   ├── lib/                  # Utilities and business logic
+│   │   ├── claude.ts         # Claude API client
+│   │   ├── supabase.ts       # Supabase client
+│   │   └── financial-analysis-agent.ts # Specialized agent
+│   ├── pages/
+│   │   ├── api/              # API routes (serverless functions)
+│   │   │   ├── analyze-finances.ts # Financial analysis endpoint
+│   │   │   └── get-financial-data.ts # Data retrieval endpoint
+│   │   ├── _app.tsx          # App component with providers
+│   │   └── index.tsx         # Main application page
+│   └── styles/
+│       └── globals.css       # Global styles
+├── public/                   # Static assets
+├── next.config.js            # Next.js configuration
+├── package.json              # Dependencies and scripts
+├── tsconfig.json             # TypeScript configuration
+└── vercel.json               # Vercel deployment configuration
+```
 
 ## Planned Features
 - User authentication system

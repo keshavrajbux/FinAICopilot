@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "ANTHROPIC_API_KEY": "ENV_PLACEHOLDER",
+    "NEXT_PUBLIC_SUPABASE_URL": "ENV_PLACEHOLDER",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "ENV_PLACEHOLDER",
+    "SUPABASE_SERVICE_ROLE_KEY": "ENV_PLACEHOLDER"
+  }
+} 

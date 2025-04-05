@@ -4,12 +4,12 @@
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![React](https://img.shields.io/badge/React-18.2.0-blue.svg)
-![Node](https://img.shields.io/badge/Node-16.x-green.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)
 
-An intelligent financial assistant powered by AI that helps users make informed financial decisions through comprehensive analysis and personalized recommendations.
+An intelligent financial assistant powered by Claude AI that helps users make informed financial decisions through comprehensive analysis and personalized recommendations.
 
-[![Demo](https://img.shields.io/badge/Live-Demo-blue.svg)](https://your-demo-url.com)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black.svg)](https://your-deployment-url.vercel.app)
 [![Documentation](https://img.shields.io/badge/Docs-Read-blue.svg)](https://your-docs-url.com)
 
 </div>
@@ -51,11 +51,11 @@ An intelligent financial assistant powered by AI that helps users make informed 
 
 <div align="center">
 
-| Frontend | Backend | Database | AI/ML | Testing |
-|----------|---------|----------|-------|---------|
-| React.js | Node.js | Supabase | OpenAI | Jest |
-| Chakra UI | Express | PostgreSQL | GPT-4 | React Testing Library |
-| Redux | TypeScript | Prisma | TensorFlow | Cypress |
+| Frontend | Backend | Database | AI/ML | Deployment |
+|----------|---------|----------|-------|------------|
+| Next.js | Next.js API Routes | Supabase | Claude AI | Vercel |
+| Chakra UI | TypeScript | PostgreSQL | Anthropic SDK | Edge Functions |
+| React | Serverless | Row-level Security | - | Serverless |
 
 </div>
 
@@ -66,153 +66,124 @@ An intelligent financial assistant powered by AI that helps users make informed 
 git clone https://github.com/yourusername/FinAICopilot.git
 cd FinAICopilot
 
-# Install frontend dependencies
-cd frontend
-npm install
-
-# Install backend dependencies
-cd ../backend
+# Install dependencies
 npm install
 
 # Set up environment variables
-cp .env.example .env
+cp .env.example .env.local
 ```
 
 ## ⚙️ Configuration
 
-Create a `.env` file in both frontend and backend directories:
+Edit the `.env.local` file with your credentials:
 
 ```env
-# Frontend (.env)
-REACT_APP_SUPABASE_URL=your_supabase_url
-REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-REACT_APP_API_URL=your_backend_url
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Backend (.env)
-PORT=3001
-NODE_ENV=development
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_supabase_service_key
-OPENAI_API_KEY=your_openai_api_key
+# Claude API Configuration
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Application Settings
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ## 🎮 Usage
 
-### Starting the Application
-
+### Development
 ```bash
-# Start frontend (in frontend directory)
-npm start
-
-# Start backend (in backend directory)
+# Start the development server
 npm run dev
 ```
 
-### Running Tests
-
+### Production Build
 ```bash
-# Run all tests
+# Build for production
+npm run build
+
+# Start the production server
+npm start
+```
+
+### Testing
+```bash
+# Run tests
 npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
 ```
 
 ## 🏗️ Project Structure
 
 ```
 FinAICopilot/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/          # Page components
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── services/       # API services
-│   │   └── utils/          # Utility functions
-│   └── public/             # Static assets
-├── backend/                 # Node.js backend application
-│   ├── src/
-│   │   ├── agents/         # AI agents
-│   │   │   ├── BaseAgent.js
-│   │   │   ├── SpendingAnalysisAgent.js
-│   │   │   ├── InvestmentAnalysisAgent.js
-│   │   │   ├── ScenarioAnalysisAgent.js
-│   │   │   └── AgentOrchestrator.js
-│   │   ├── controllers/    # Route controllers
-│   │   ├── models/         # Data models
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Utility functions
-│   ├── tests/              # Test files
-│   │   ├── agents/         # Agent-specific tests
-│   │   └── utils/          # Test utilities
-│   └── config/             # Configuration files
-└── docs/                   # Documentation
+├── src/
+│   ├── components/           # React components
+│   ├── lib/                  # Utilities and business logic
+│   │   ├── claude.ts         # Claude API client
+│   │   ├── supabase.ts       # Supabase client
+│   │   └── financial-analysis-agent.ts # Specialized agent
+│   ├── pages/
+│   │   ├── api/              # API routes (serverless functions)
+│   │   │   ├── analyze-finances.ts # Financial analysis endpoint
+│   │   │   └── get-financial-data.ts # Data retrieval endpoint
+│   │   ├── _app.tsx          # App component with providers
+│   │   └── index.tsx         # Main application page
+│   └── styles/
+│       └── globals.css       # Global styles
+├── public/                   # Static assets
+├── next.config.js            # Next.js configuration
+├── package.json              # Dependencies and scripts
+├── tsconfig.json             # TypeScript configuration
+└── vercel.json               # Vercel deployment configuration
 ```
 
-## 🤖 AI Agents
+## 🧪 Supabase Database Setup
 
-### SpendingAnalysisAgent
-- Analyzes transaction patterns
-- Identifies spending categories
-- Generates budget recommendations
-- Tracks recurring expenses
+The application requires two tables in your Supabase database:
 
-### InvestmentAnalysisAgent
-- Evaluates portfolio performance
-- Monitors market conditions
-- Provides investment recommendations
-- Calculates risk metrics
+### 1. financial_data
+```sql
+CREATE TABLE financial_data (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  financial_data JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-### ScenarioAnalysisAgent
-- Simulates financial scenarios
-- Projects future outcomes
-- Analyzes risk factors
-- Generates strategic recommendations
+-- Add index on user_id for query performance
+CREATE INDEX financial_data_user_id_idx ON financial_data(user_id);
+```
 
-## 🧪 Testing
+### 2. financial_analyses
+```sql
+CREATE TABLE financial_analyses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  analysis_data JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-The project includes comprehensive testing:
+-- Add index on user_id for query performance
+CREATE INDEX financial_analyses_user_id_idx ON financial_analyses(user_id);
+```
 
-### Unit Tests
-- Agent functionality
-- Data processing
-- Error handling
-- Edge cases
+## 🚀 Deployment
 
-### Integration Tests
-- API endpoints
-- Database operations
-- Agent coordination
-- Data flow
+### Deploying to Vercel
 
-### Coverage
-- Code coverage reporting
-- Test scenarios
-- Performance testing
-- Security testing
+```bash
+# Install Vercel CLI
+npm install -g vercel
 
-## 📈 Demo Scenarios
+# Login to Vercel
+vercel login
 
-### Default Scenario
-- Balanced financial profile
-- Moderate spending habits
-- Diversified portfolio
-- Standard risk tolerance
+# Deploy to Vercel
+vercel
+```
 
-### Conservative Saver
-- High savings focus
-- Low-risk investments
-- Essential expenses
-- Stable portfolio
-
-### Aggressive Investor
-- Growth-focused strategy
-- High-risk tolerance
-- Variable spending
-- Dynamic portfolio
+Or simply push to your GitHub repository and connect it to Vercel for automatic deployments.
 
 ## 🤝 Contributing
 
@@ -222,28 +193,22 @@ The project includes comprehensive testing:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-### Development Guidelines
-- Write tests for new features
-- Maintain test coverage above 80%
-- Follow the existing code style
-- Update documentation
-
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- OpenAI for providing the GPT API
+- Anthropic for the Claude AI API
 - Supabase for the database and authentication
 - Chakra UI for the component library
-- Jest for the testing framework
+- Vercel for hosting and deployment
 
 ---
 
 <div align="center">
 
-By Keshav Rajbux
+Made by Keshav Rajbux
 
 [![Twitter](https://img.shields.io/badge/Twitter-@yourhandle-blue.svg)](https://twitter.com/yourhandle)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Your%20Name-blue.svg)](https://linkedin.com/in/yourprofile)
