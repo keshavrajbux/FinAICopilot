@@ -1,45 +1,44 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * Browser-safe Supabase Client
+ *
+ * This client uses the anonymous key and is safe to use in client-side components.
+ * For server-side operations requiring admin access, use supabase-admin.ts instead.
+ *
+ * If Supabase is not configured, the app will run in "demo mode" without auth/persistence.
+ */
 
-// Initialize the Supabase client
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL or Key is missing. Check your environment variables.');
-}
+// Check if Supabase is configured
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
-// Create a standard client for client-side operations (with anon key)
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-  db: {
-    schema: 'public',
-  },
-});
+// Lazy-initialize the client to avoid errors during build
+let supabaseClient: SupabaseClient | null = null;
 
-// Create an admin client for server-side operations that need to bypass RLS
-export const supabaseAdmin = supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+function getSupabaseClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
+  if (!supabaseClient) {
+    supabaseClient = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+        persistSession: true,
+        autoRefreshToken: true,
       },
       db: {
         schema: 'public',
       },
-    })
-  : null;
+    });
+  }
 
-// Logs for debugging - only in development
-if (process.env.NODE_ENV === 'development') {
-  console.log('Supabase Configuration:');
-  console.log('- URL configured:', !!supabaseUrl);
-  console.log('- Anon key configured:', !!supabaseAnonKey);
-  console.log('- Service role key configured:', !!supabaseServiceKey);
-  console.log('- Admin client available:', !!supabaseAdmin);
+  return supabaseClient;
 }
 
-export default supabase; 
+// Export the client (may be null if not configured)
+const supabase = getSupabaseClient();
+
+export default supabase;

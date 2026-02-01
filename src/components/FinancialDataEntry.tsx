@@ -43,6 +43,7 @@ import { FinancialData, AnalysisResults } from '@/lib/financial-analysis-agent';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
+import UserMenu from './UserMenu';
 
 // Extend the AnalysisResults interface locally to include API response metadata
 interface ExtendedAnalysisResults extends AnalysisResults {
@@ -54,12 +55,12 @@ interface ExtendedAnalysisResults extends AnalysisResults {
   _error?: string;
 }
 
-const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
-const MotionHeading = motion(Heading);
-const MotionText = motion(Text);
-const MotionIcon = motion(Icon);
-const MotionSimpleGrid = motion(SimpleGrid);
+const MotionBox = motion.create(Box);
+const MotionFlex = motion.create(Flex);
+const MotionHeading = motion.create(Heading);
+const MotionText = motion.create(Text);
+const MotionIcon = motion.create(Icon);
+const MotionSimpleGrid = motion.create(SimpleGrid);
 
 const FinancialDataEntry: React.FC = () => {
   const toast = useToast();
@@ -376,24 +377,31 @@ const FinancialDataEntry: React.FC = () => {
     >
       <Container maxW="container.xl" py={6} position="relative" zIndex={1}>
         <VStack spacing={8} align="stretch">
-          <Box textAlign="center" mb={4}>
-            <Heading 
-              size="xl" 
-              bgGradient="linear(to-r, purple.400, purple.600)" 
-              bgClip="text"
-              mb={2}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              gap={2}
-            >
-              <Text>finAI agent</Text>
-              <Text fontSize="2xl" color="purple.500">$$$</Text>
-            </Heading>
-            <Text color={textColor} fontSize="lg">
-              Get quick insights into your financial health with a few simple inputs
-            </Text>
-          </Box>
+          {/* Header with UserMenu */}
+          <Flex justifyContent="space-between" alignItems="center" mb={4}>
+            <Box flex="1" />
+            <Box textAlign="center" flex="2">
+              <Heading
+                size="xl"
+                bgGradient="linear(to-r, purple.400, purple.600)"
+                bgClip="text"
+                mb={2}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                gap={2}
+              >
+                <Text>finAI agent</Text>
+                <Text fontSize="2xl" color="purple.500">$$$</Text>
+              </Heading>
+              <Text color={textColor} fontSize="lg">
+                Get quick insights into your financial health with a few simple inputs
+              </Text>
+            </Box>
+            <Box flex="1" display="flex" justifyContent="flex-end">
+              <UserMenu />
+            </Box>
+          </Flex>
           
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
             {/* Input Section */}
@@ -439,10 +447,11 @@ const FinancialDataEntry: React.FC = () => {
                         precision={0}
                         step={100}
                       >
-                        <NumberInputField 
+                        <NumberInputField
                           borderColor="gray.300"
-                          _hover={{ borderColor: "blue.300" }}
-                          bg="gray.50"
+                          _hover={{ borderColor: "purple.300" }}
+                          bg="white"
+                          color="gray.800"
                           fontSize="lg"
                         />
                         <NumberInputStepper>
@@ -461,10 +470,11 @@ const FinancialDataEntry: React.FC = () => {
                         precision={0}
                         step={100}
                       >
-                        <NumberInputField 
+                        <NumberInputField
                           borderColor="gray.300"
-                          _hover={{ borderColor: "blue.300" }}
-                          bg="gray.50"
+                          _hover={{ borderColor: "purple.300" }}
+                          bg="white"
+                          color="gray.800"
                           fontSize="lg"
                         />
                         <NumberInputStepper>
@@ -488,10 +498,11 @@ const FinancialDataEntry: React.FC = () => {
                           precision={0}
                           step={100}
                         >
-                          <NumberInputField 
+                          <NumberInputField
                             borderColor="gray.300"
-                            _hover={{ borderColor: "blue.300" }}
-                            bg="gray.50"
+                            _hover={{ borderColor: "purple.300" }}
+                            bg="white"
+                            color="gray.800"
                           />
                           <NumberInputStepper>
                             <NumberIncrementStepper />
@@ -509,10 +520,11 @@ const FinancialDataEntry: React.FC = () => {
                           precision={0}
                           step={100}
                         >
-                          <NumberInputField 
+                          <NumberInputField
                             borderColor="gray.300"
-                            _hover={{ borderColor: "blue.300" }}
-                            bg="gray.50"
+                            _hover={{ borderColor: "purple.300" }}
+                            bg="white"
+                            color="gray.800"
                           />
                           <NumberInputStepper>
                             <NumberIncrementStepper />
@@ -562,10 +574,11 @@ const FinancialDataEntry: React.FC = () => {
                       precision={0}
                       step={1000}
                     >
-                      <NumberInputField 
+                      <NumberInputField
                         borderColor="gray.300"
-                        _hover={{ borderColor: "blue.300" }}
-                        bg="gray.50"
+                        _hover={{ borderColor: "purple.300" }}
+                        bg="white"
+                        color="gray.800"
                         fontSize="lg"
                       />
                       <NumberInputStepper>

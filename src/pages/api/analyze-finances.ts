@@ -1,243 +1,155 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { FinancialAnalysisAgent, FinancialData, AnalysisResults } from '@/lib/financial-analysis-agent';
-import supabase, { supabaseAdmin } from '@/lib/supabase';
+import { FinancialAnalysisAgent } from '@/lib/financial-analysis-agent';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import {
+  validateFinancialData,
+  calculateAnalysis,
+  AnalysisResults,
+  FinancialData,
+} from '@/lib/calculations';
+import {
+  getAuthenticatedUser,
+  setCorsHeaders,
+  handleCorsPrelight,
+  sendErrorResponse,
+  sendUnauthorized,
+  sendMethodNotAllowed,
+} from '@/lib/api-utils';
+import { applyRateLimit, AI_RATE_LIMIT } from '@/lib/rate-limit';
+import { ZodError } from 'zod';
 
-// Data validation
-const validateFinancialData = (data: any): data is FinancialData => {
-  return (
-    typeof data === 'object' &&
-    typeof data.monthlyIncome === 'number' &&
-    typeof data.monthlyExpenses === 'number' &&
-    typeof data.savings === 'number' &&
-    typeof data.investments === 'number' &&
-    typeof data.debt === 'number'
-  );
-};
-
-// Calculate metrics locally as a fallback
-const calculateLocalMetrics = (data: FinancialData): AnalysisResults => {
-  const monthlySavings = data.monthlyIncome - data.monthlyExpenses;
-  const savingsRate = data.monthlyIncome > 0 ? (monthlySavings / data.monthlyIncome) * 100 : 0;
-  const netWorth = data.savings + data.investments - data.debt;
-  const emergencyFundMonths = data.monthlyExpenses > 0 ? data.savings / data.monthlyExpenses : 0;
-  const debtToIncomeRatio = data.monthlyIncome > 0 ? (data.debt / (data.monthlyIncome * 12)) * 100 : 0;
-  
-  return {
-    metrics: {
-      savingsRate,
-      netWorth,
-      emergencyFundMonths,
-      debtToIncomeRatio,
-      monthlySavings
-    },
-    insights: [
-      {
-        type: "savings_rate",
-        severity: savingsRate >= 20 ? "positive" : savingsRate >= 10 ? "warning" : "critical",
-        message: `Your savings rate is ${savingsRate.toFixed(1)}%`,
-        recommendation: savingsRate < 20 ? "Aim to save at least 20% of your income" : "Keep up the good work!"
-      },
-      {
-        type: "emergency_fund",
-        severity: emergencyFundMonths >= 6 ? "positive" : emergencyFundMonths >= 3 ? "warning" : "critical",
-        message: `Your emergency fund covers ${emergencyFundMonths.toFixed(1)} months of expenses`,
-        recommendation: emergencyFundMonths < 6 ? "Build an emergency fund covering 3-6 months of expenses" : "Consider investing excess emergency savings"
-      },
-      {
-        type: "debt_ratio",
-        severity: debtToIncomeRatio <= 36 ? "positive" : debtToIncomeRatio <= 43 ? "warning" : "critical",
-        message: `Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%`,
-        recommendation: debtToIncomeRatio > 36 ? "Reduce your debt load to improve financial flexibility" : "Your debt level is manageable"
-      },
-      {
-        type: "net_worth",
-        severity: netWorth > 0 ? "positive" : "critical",
-        message: `Your net worth is ${netWorth >= 0 ? '$' + netWorth.toFixed(0) : '-$' + Math.abs(netWorth).toFixed(0)}`,
-        recommendation: netWorth < 0 ? "Focus on paying down debts to achieve a positive net worth" : "Continue building assets to increase your net worth"
-      }
-    ]
-  };
-};
-
+/**
+ * POST /api/analyze-finances
+ *
+ * Analyzes financial data and returns insights.
+ * Requires authentication in production.
+ * Saves data to database if available.
+ */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Enable CORS for development
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,DELETE,PATCH,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-  
-  // Handle OPTIONS request for CORS preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  // Set CORS headers (secure, origin-checked)
+  setCorsHeaders(req, res);
+
+  // Handle preflight
+  if (handleCorsPrelight(req, res)) {
+    return;
   }
-  
-  // Only allow POST method
+
+  // Only allow POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendMethodNotAllowed(res, ['POST']);
   }
 
-  console.log('Analyze finances API called');
-  
+  // Apply rate limiting (AI endpoints have stricter limits)
+  if (applyRateLimit(req, res, AI_RATE_LIMIT)) {
+    return; // Request was rate limited
+  }
+
   try {
-    // Using a demo user ID for now - in production, use authenticated user
-    const userId = 'demo-user-123'; // Replace with user.id in production
+    // Authenticate user
+    const { userId, error: authError } = await getAuthenticatedUser(req, res);
 
-    // Get financial data from request body
-    const financialData = req.body;
-    console.log('Received financial data:', financialData);
+    let effectiveUserId: string;
 
-    // Validate data
-    if (!validateFinancialData(financialData)) {
-      console.error('Invalid financial data format:', financialData);
-      return res.status(400).json({ error: 'Invalid financial data format' });
+    if (!userId) {
+      // In production, require authentication
+      if (process.env.NODE_ENV === 'production') {
+        return sendUnauthorized(res, authError || 'Authentication required');
+      }
+      // In development, allow demo user
+      effectiveUserId = 'demo-user-dev';
+    } else {
+      effectiveUserId = userId;
     }
 
-    // Choose the appropriate client - use admin client if available, otherwise fallback to regular client
-    const dbClient = supabaseAdmin || supabase;
-    
-    // Save financial data to Supabase
+    // Validate input data with Zod
+    let financialData: FinancialData;
+    try {
+      financialData = validateFinancialData(req.body);
+    } catch (validationError) {
+      if (validationError instanceof ZodError) {
+        return sendErrorResponse(
+          res,
+          400,
+          'Invalid financial data: ' + validationError.errors.map(e => e.message).join(', ')
+        );
+      }
+      return sendErrorResponse(res, 400, 'Invalid financial data format');
+    }
+
+    // Save financial data to database (if admin client is available)
     let dataSaved = false;
-    try {
-      // Output the client being used for debugging
-      console.log('Using database client:', dbClient ? (supabaseAdmin ? 'admin client' : 'regular client') : 'no client available');
-      
-      // Check if Supabase URL and key are configured
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        console.error('Supabase environment variables not configured properly.');
-        console.log('NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-        console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-        throw new Error('Database configuration missing');
-      }
-      
-      if (!dbClient) {
-        console.error('No database client available');
-        throw new Error('Database connection not available');
-      }
-      
-      // First, check if the table exists before attempting to insert
+    if (supabaseAdmin) {
       try {
-        // Supabase doesn't have a direct "table exists" query, but we can try to select from it
-        const { count, error: checkError } = await dbClient
+        const { error: saveError } = await supabaseAdmin
           .from('financial_data')
-          .select('*', { count: 'exact', head: true })
-          .limit(0);
-          
-        if (checkError) {
-          console.error('Table check error - table may not exist:', checkError);
-          throw new Error(`Table check failed: ${checkError.message}`);
-        }
-        
-        console.log('Table check successful, count:', count);
-      } catch (tableCheckError) {
-        console.error('Error checking if table exists:', tableCheckError);
-        throw new Error('Database table does not exist or is not accessible');
-      }
-      
-      // Now attempt the insert
-      const { data, error: saveError } = await dbClient
-        .from('financial_data')
-        .insert([{
-          user_id: userId,
-          financial_data: financialData,
-          created_at: new Date().toISOString()
-        }]);
+          .insert([{
+            user_id: effectiveUserId,
+            financial_data: financialData,
+            created_at: new Date().toISOString(),
+          }]);
 
-      if (saveError) {
-        console.error('Error saving financial data:', saveError);
-        
-        // Check policy issues - might be RLS related
-        if (saveError.message && saveError.message.includes('permission denied')) {
-          console.error('Permission denied error - likely RLS policy issue');
-          console.log('Attempting with demo user ID:', userId);
+        if (saveError) {
+          // Log error server-side only, don't expose to client
+          console.error('Database save error:', saveError.message);
+        } else {
+          dataSaved = true;
         }
-        
-        throw new Error(`Failed to save data: ${saveError.message}`);
-      } else {
-        console.log('Financial data saved successfully', data);
-        dataSaved = true;
+      } catch (dbError) {
+        console.error('Database exception:', dbError);
       }
-    } catch (dbError) {
-      console.error('Database error saving financial data:', dbError);
-      // Continue with analysis even if data saving fails
     }
 
+    // Perform AI analysis with fallback
     let analysisResults: AnalysisResults;
-    
     try {
-      // Try to get analysis from AI agent
       const analysisAgent = new FinancialAnalysisAgent();
-      
-      // The analyze method now accepts FinancialData directly
       analysisResults = await analysisAgent.analyze(financialData);
-      console.log('AI analysis successfully generated');
-      
-      // Try to save analysis results if we have a client
-      if (dbClient) {
-        try {
-          const { error: analysisError } = await dbClient
-            .from('financial_analyses')
-            .insert([{
-              user_id: userId,
-              analysis_data: analysisResults
-            }]);
-  
-          if (analysisError) {
-            console.error('Error saving analysis:', analysisError);
-          } else {
-            console.log('Analysis saved successfully');
-          }
-        } catch (analysisDbError) {
-          console.error('Database error saving analysis:', analysisDbError);
-        }
-      }
     } catch (aiError) {
-      console.error('Error generating AI analysis:', aiError);
-      // Add more detailed error logging
-      console.warn({
-        message: 'API Fallback: Using local calculations',
-        error: aiError instanceof Error ? aiError.message : String(aiError),
-        timestamp: new Date().toISOString(),
-        financialDataId: userId // for debugging/tracing
-      });
-      
-      // Fallback to local calculations
-      analysisResults = calculateLocalMetrics(financialData);
-      console.log('Using local calculations instead of AI');
+      console.error('AI analysis error, using local calculations:', aiError);
+      analysisResults = calculateAnalysis(financialData);
     }
 
-    // Include data saving status in the response
+    // Save analysis results
+    if (supabaseAdmin && dataSaved) {
+      try {
+        await supabaseAdmin
+          .from('financial_analyses')
+          .insert([{
+            user_id: effectiveUserId,
+            analysis_data: analysisResults,
+            created_at: new Date().toISOString(),
+          }]);
+      } catch (analysisDbError) {
+        // Non-critical, log and continue
+        console.error('Failed to save analysis:', analysisDbError);
+      }
+    }
+
+    // Return successful response
     return res.status(200).json({
       ...analysisResults,
       _meta: {
         dataSaved,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   } catch (error) {
-    console.error('Error in analyze-finances API:', error);
-    
-    // If an error occurs, return local calculations as fallback
+    // Attempt fallback analysis on any unhandled error
     try {
-      const financialData = req.body;
-      if (validateFinancialData(financialData)) {
-        const fallbackResults = calculateLocalMetrics(financialData);
-        return res.status(200).json({
-          ...fallbackResults,
-          _note: 'Using local calculations due to server error',
-          _error: error instanceof Error ? error.message : 'Unknown error occurred'
-        });
-      }
-    } catch (fallbackError) {
-      console.error('Error generating fallback analysis:', fallbackError);
+      const validatedData = validateFinancialData(req.body);
+      const fallbackResults = calculateAnalysis(validatedData);
+
+      return res.status(200).json({
+        ...fallbackResults,
+        _meta: {
+          dataSaved: false,
+          timestamp: new Date().toISOString(),
+          fallback: true,
+        },
+      });
+    } catch {
+      // Complete failure - return safe error message
+      return sendErrorResponse(res, 500, 'Unable to process request', error);
     }
-    
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
-      timestamp: new Date().toISOString()
-    });
   }
-} 
+}
