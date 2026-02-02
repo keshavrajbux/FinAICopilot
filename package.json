@@ -1,8 +1,8 @@
 {
   "name": "finai-copilot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Financial Decision Copilot - AI-powered financial analysis tool",
+  "description": "Financial Decision Copilot - AI-powered financial analysis tool for financial institutions",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +10,11 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:setup": "echo 'Run database/multi-tenant-schema.sql in Supabase SQL Editor'",
+    "tenant:create": "echo 'Run scripts/create-demo-tenant.sql in Supabase SQL Editor'",
+    "docs:api": "echo 'See ENTERPRISE_API_DOCS.md for API documentation'",
+    "docs:setup": "echo 'See ENTERPRISE_SETUP_GUIDE.md for setup instructions'"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
