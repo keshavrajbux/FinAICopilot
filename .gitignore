@@ -61,4 +61,10 @@ FSTimeGet-*
 .git-old/
 .backup
 *~
-.cache 
+.cache
+
+# Enterprise documentation (too verbose for repo)
+ENTERPRISE_API_DOCS.md
+ENTERPRISE_SETUP_GUIDE.md
+ENTERPRISE_SUMMARY.md
+TESTING_GUIDE.md 

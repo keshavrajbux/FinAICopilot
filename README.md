@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-Commercial-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)
 
@@ -13,6 +13,28 @@ An intelligent financial assistant powered by Claude and OpenAI that helps users
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-blue.svg)](https://github.com/keshavrajbux/FinAICopilot)
 
 </div>
+
+---
+
+## 🏦 **NEW: Enterprise Multi-Tenant Platform**
+
+**FinAI Copilot is now available as white-label infrastructure for financial institutions!**
+
+- 🏢 **For Banks & Fintech**: Add AI-powered financial guidance to your app in 2 weeks
+- 🔐 **Enterprise-Grade**: Multi-tenant architecture with complete data isolation
+- ✅ **Compliance-First**: SOC 2, FDIC, FINRA ready
+- 💰 **Revenue Impact**: $6.7M+ annual value per 10K users
+
+### 📚 Enterprise Documentation
+
+- **[Enterprise Overview & Business Case](./ENTERPRISE_SUMMARY.md)** - Start here!
+- **[Enterprise Platform README](./ENTERPRISE_README.md)** - Full product details
+- **[API Documentation](./ENTERPRISE_API_DOCS.md)** - Integration guide
+- **[Setup Guide](./ENTERPRISE_SETUP_GUIDE.md)** - Technical setup
+
+**Looking for design partners?** Contact: sales@finaicopilot.com
+
+---
 
 ## 🌟 Features
 
