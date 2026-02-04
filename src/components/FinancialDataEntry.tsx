@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Button,
   VStack,
   Heading,
   Text,
@@ -21,29 +20,33 @@ import {
   Icon,
   HStack,
   Badge,
-  useColorModeValue,
   Container,
   Slider,
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
   SliderMark,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
   CircularProgress,
   CircularProgressLabel,
   Link
 } from '@chakra-ui/react';
-import { FaWallet, FaCreditCard, FaChartLine, FaMoneyBillWave, FaClipboardCheck, FaSave, FaDatabase, FaLink, FaTools, FaArrowUp, FaArrowDown, FaLightbulb, FaRocket, FaTrophy, FaFire } from 'react-icons/fa';
+import { FaCreditCard, FaChartLine, FaMoneyBillWave, FaSave, FaTools, FaArrowUp, FaArrowDown, FaLightbulb, FaRocket, FaTrophy, FaFire, FaStar } from 'react-icons/fa';
 import { CheckCircleIcon, WarningIcon } from '@chakra-ui/icons';
 import { FinancialData, AnalysisResults } from '@/lib/financial-analysis-agent';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import UserMenu from './UserMenu';
+import SpaceBackground from './SpaceBackground';
+
+// Magic UI Components for cosmic effects
+import { Particles } from './magicui/particles';
+import { Meteors } from './magicui/meteors';
+import { SparklesText } from './magicui/sparkles-text';
+import { AuroraText } from './magicui/aurora-text';
+import { BorderBeam } from './magicui/border-beam';
+import { NumberTicker } from './magicui/number-ticker';
+import { ShimmerButton } from './magicui/shimmer-button';
 
 // Extend the AnalysisResults interface locally to include API response metadata
 interface ExtendedAnalysisResults extends AnalysisResults {
@@ -56,7 +59,6 @@ interface ExtendedAnalysisResults extends AnalysisResults {
 }
 
 const MotionBox = motion.create(Box);
-const MotionFlex = motion.create(Flex);
 const MotionHeading = motion.create(Heading);
 const MotionText = motion.create(Text);
 const MotionIcon = motion.create(Icon);
@@ -68,10 +70,14 @@ const FinancialDataEntry: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<ExtendedAnalysisResults | null>(null);
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const accentColor = useColorModeValue('purple.300', 'purple.400');
-  const bgColor = useColorModeValue('purple.50', 'gray.900');
-  const textColor = useColorModeValue('purple.800', 'purple.100');
+
+  // Space theme colors - glassmorphism style
+  const cardBg = 'rgba(255, 255, 255, 0.03)';
+  const cardBorder = 'rgba(255, 255, 255, 0.1)';
+  const accentColor = '#8b5cf6';
+  const mutedText = 'whiteAlpha.800'; // Improved contrast for accessibility
+  const inputBg = 'rgba(255, 255, 255, 0.05)';
+  const inputBorder = 'rgba(255, 255, 255, 0.1)';
   
   // Check if we should show developer tools
   // Show in development mode or if there's a special query parameter
@@ -127,25 +133,6 @@ const FinancialDataEntry: React.FC = () => {
       ...prev,
       [field]: numValue
     }));
-  };
-
-  // Calculate key metrics locally to show immediately in UI
-  const getMonthlySavings = () => financialData.monthlyIncome - financialData.monthlyExpenses;
-  
-  const getSavingsRate = () => {
-    const income = financialData.monthlyIncome;
-    if (income === 0) return 0;
-    return (getMonthlySavings() / income) * 100;
-  };
-  
-  const getNetWorth = () => financialData.savings + financialData.investments - financialData.debt;
-  
-  const getEmergencyFundMonths = () => financialData.savings / financialData.monthlyExpenses;
-  
-  const getDebtToIncomeRatio = () => {
-    const annualIncome = financialData.monthlyIncome * 12;
-    if (annualIncome === 0) return 0;
-    return (financialData.debt / annualIncome) * 100;
   };
 
   // Save financial data directly via API
@@ -357,280 +344,401 @@ const FinancialDataEntry: React.FC = () => {
   };
 
   return (
-    <Box 
-      minH="100vh" 
-      bg={bgColor}
+    <Box
+      minH="100vh"
       position="relative"
-      _before={{
-        content: '""',
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23E9D8FD\" opacity=\"0.1\"><text x=\"50\" y=\"50\" font-family=\"Arial\" font-size=\"60\" text-anchor=\"middle\" dominant-baseline=\"middle\">$</text></svg>')",
-        backgroundRepeat: "repeat",
-        backgroundSize: "100px",
-        opacity: 0.1,
-        zIndex: 0
-      }}
+      bg="transparent"
     >
-      <Container maxW="container.xl" py={6} position="relative" zIndex={1}>
+      {/* Animated Space Background with Magic UI effects */}
+      <SpaceBackground />
+
+      {/* Magic UI Particles - floating star dust */}
+      <Particles
+        quantity={80}
+        staticity={30}
+        ease={80}
+        size={0.8}
+        color="#ffffff"
+        className="opacity-60"
+      />
+
+      {/* Magic UI Meteors - shooting stars */}
+      <Box position="fixed" inset={0} zIndex={0} overflow="hidden" pointerEvents="none">
+        <Meteors
+          number={15}
+          minDelay={0.5}
+          maxDelay={2}
+          minDuration={3}
+          maxDuration={8}
+          angle={215}
+        />
+      </Box>
+
+      <Container maxW="container.xl" py={8} position="relative" zIndex={1}>
         <VStack spacing={8} align="stretch">
           {/* Header with UserMenu */}
           <Flex justifyContent="space-between" alignItems="center" mb={4}>
             <Box flex="1" />
-            <Box textAlign="center" flex="2">
+            <MotionBox
+              textAlign="center"
+              flex="2"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
               <Heading
                 size="xl"
-                bgGradient="linear(to-r, purple.400, purple.600)"
-                bgClip="text"
-                mb={2}
+                mb={3}
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
-                gap={2}
+                gap={3}
+                letterSpacing="tight"
               >
-                <Text>finAI agent</Text>
-                <Text fontSize="2xl" color="purple.500">$$$</Text>
+                <MotionIcon
+                  as={FaStar}
+                  color="#8b5cf6"
+                  animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                />
+                <SparklesText
+                  colors={{ first: "#8b5cf6", second: "#ec4899" }}
+                  sparklesCount={12}
+                >
+                  <Text
+                    as="span"
+                    bgGradient="linear(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)"
+                    bgClip="text"
+                  >
+                    FinAI Copilot
+                  </Text>
+                </SparklesText>
+                <MotionIcon
+                  as={FaStar}
+                  color="#ec4899"
+                  animate={{ rotate: -360, scale: [1, 1.2, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                />
               </Heading>
-              <Text color={textColor} fontSize="lg">
-                Get quick insights into your financial health with a few simple inputs
-              </Text>
-            </Box>
+              <AuroraText
+                colors={["#6366f1", "#8b5cf6", "#ec4899", "#06b6d4"]}
+                speed={1.5}
+                className=""
+              >
+                <Text as="span" fontSize="lg" fontWeight="300">
+                  Navigate your financial universe with AI-powered insights
+                </Text>
+              </AuroraText>
+            </MotionBox>
             <Box flex="1" display="flex" justifyContent="flex-end">
               <UserMenu />
             </Box>
           </Flex>
           
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-            {/* Input Section */}
-            <Card 
-              bg={cardBg} 
-              shadow="lg" 
-              borderRadius="lg" 
-              overflow="hidden"
-              border="1px solid"
-              borderColor="purple.100"
-              _hover={{
-                transform: 'translateY(-2px)',
-                transition: 'all 0.2s',
-                boxShadow: 'xl'
-              }}
+            {/* Input Section - Glassmorphism Card with BorderBeam */}
+            <MotionBox
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <CardBody>
-                <VStack spacing={6} align="stretch">
-                  <Flex justifyContent="space-between" alignItems="center">
-                    <Heading size="md" mb={2} color={accentColor}>
-                      <Icon as={FaMoneyBillWave} mr={2} />
-                      Your Financial Snapshot
-                    </Heading>
-                    <Button 
-                      size="sm" 
-                      leftIcon={<FaSave />} 
-                      colorScheme="purple" 
-                      variant="outline"
-                      onClick={() => saveFinancialData(true)}
-                      isLoading={isSaving}
-                    >
-                      Save Data
-                    </Button>
-                  </Flex>
-                  
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                    <FormControl>
-                      <FormLabel fontWeight="bold">Monthly Income</FormLabel>
-                      <NumberInput
-                        value={financialData.monthlyIncome}
-                        onChange={(_, value) => handleChange('monthlyIncome', value)}
-                        min={0}
-                        precision={0}
-                        step={100}
+              <Card
+                bg={cardBg}
+                backdropFilter="blur(20px)"
+                borderRadius="2xl"
+                overflow="hidden"
+                border="1px solid"
+                borderColor={cardBorder}
+                _hover={{
+                  borderColor: 'rgba(139, 92, 246, 0.3)',
+                  boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15)',
+                }}
+                transition="all 0.3s ease"
+                position="relative"
+              >
+                <BorderBeam
+                  size={250}
+                  duration={12}
+                  colorFrom="#6366f1"
+                  colorTo="#ec4899"
+                  borderWidth={2}
+                />
+                <CardBody p={8}>
+                  <VStack spacing={6} align="stretch">
+                    <Flex justifyContent="space-between" alignItems="center">
+                      <Heading size="md" color="white" display="flex" alignItems="center">
+                        <Icon as={FaMoneyBillWave} mr={3} color={accentColor} />
+                        Financial Snapshot
+                      </Heading>
+                      <Button
+                        size="sm"
+                        leftIcon={<FaSave />}
+                        variant="outline"
+                        borderColor={accentColor}
+                        color={accentColor}
+                        _hover={{ bg: 'rgba(139, 92, 246, 0.1)' }}
+                        onClick={() => saveFinancialData(true)}
+                        isLoading={isSaving}
                       >
-                        <NumberInputField
-                          borderColor="gray.300"
-                          _hover={{ borderColor: "purple.300" }}
-                          bg="white"
-                          color="gray.800"
-                          fontSize="lg"
-                        />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                    
-                    <FormControl>
-                      <FormLabel fontWeight="bold">Monthly Expenses</FormLabel>
-                      <NumberInput
-                        value={financialData.monthlyExpenses}
-                        onChange={(_, value) => handleChange('monthlyExpenses', value)}
-                        min={0}
-                        precision={0}
-                        step={100}
-                      >
-                        <NumberInputField
-                          borderColor="gray.300"
-                          _hover={{ borderColor: "purple.300" }}
-                          bg="white"
-                          color="gray.800"
-                          fontSize="lg"
-                        />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                  </SimpleGrid>
-                  
-                  <Box py={2}>
-                    <Text fontWeight="bold" mb={2}>Savings & Investments</Text>
-                    
+                        Save
+                      </Button>
+                    </Flex>
+
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                       <FormControl>
-                        <FormLabel>Savings</FormLabel>
+                        <FormLabel color={mutedText} fontWeight="medium" fontSize="sm">Monthly Income</FormLabel>
                         <NumberInput
-                          value={financialData.savings}
-                          onChange={(_, value) => handleChange('savings', value)}
+                          value={financialData.monthlyIncome}
+                          onChange={(_, value) => handleChange('monthlyIncome', value)}
                           min={0}
                           precision={0}
                           step={100}
                         >
                           <NumberInputField
-                            borderColor="gray.300"
-                            _hover={{ borderColor: "purple.300" }}
-                            bg="white"
-                            color="gray.800"
+                            bg={inputBg}
+                            border="1px solid"
+                            borderColor={inputBorder}
+                            color="white"
+                            fontSize="lg"
+                            _hover={{ borderColor: 'rgba(139, 92, 246, 0.5)' }}
+                            _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
                           />
-                          <NumberInputStepper>
-                            <NumberIncrementStepper />
-                            <NumberDecrementStepper />
+                          <NumberInputStepper borderColor={inputBorder}>
+                            <NumberIncrementStepper borderColor={inputBorder} color={mutedText} />
+                            <NumberDecrementStepper borderColor={inputBorder} color={mutedText} />
                           </NumberInputStepper>
                         </NumberInput>
                       </FormControl>
-                      
+
                       <FormControl>
-                        <FormLabel>Investments</FormLabel>
+                        <FormLabel color={mutedText} fontWeight="medium" fontSize="sm">Monthly Expenses</FormLabel>
                         <NumberInput
-                          value={financialData.investments}
-                          onChange={(_, value) => handleChange('investments', value)}
+                          value={financialData.monthlyExpenses}
+                          onChange={(_, value) => handleChange('monthlyExpenses', value)}
                           min={0}
                           precision={0}
                           step={100}
                         >
                           <NumberInputField
-                            borderColor="gray.300"
-                            _hover={{ borderColor: "purple.300" }}
-                            bg="white"
-                            color="gray.800"
+                            bg={inputBg}
+                            border="1px solid"
+                            borderColor={inputBorder}
+                            color="white"
+                            fontSize="lg"
+                            _hover={{ borderColor: 'rgba(139, 92, 246, 0.5)' }}
+                            _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
                           />
-                          <NumberInputStepper>
-                            <NumberIncrementStepper />
-                            <NumberDecrementStepper />
+                          <NumberInputStepper borderColor={inputBorder}>
+                            <NumberIncrementStepper borderColor={inputBorder} color={mutedText} />
+                            <NumberDecrementStepper borderColor={inputBorder} color={mutedText} />
                           </NumberInputStepper>
                         </NumberInput>
                       </FormControl>
                     </SimpleGrid>
-                  </Box>
-                  
-                  <FormControl>
-                    <FormLabel fontWeight="bold">Total Debt</FormLabel>
-                    <Slider
-                      value={financialData.debt}
-                      min={0}
-                      max={500000}
-                      step={5000}
-                      onChange={(value) => handleChange('debt', value)}
-                      mb={2}
-                    >
-                      <SliderTrack bg="gray.200">
-                        <SliderFilledTrack bg={accentColor} />
-                      </SliderTrack>
-                      <SliderThumb boxSize={6} bg={accentColor}>
-                        <Icon as={FaCreditCard} color="white" boxSize={3} />
-                      </SliderThumb>
-                      <SliderMark
+
+                    <Box py={2}>
+                      <Text color={mutedText} fontWeight="medium" fontSize="sm" mb={4}>Savings & Investments</Text>
+
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                        <FormControl>
+                          <FormLabel color={mutedText} fontSize="sm">Savings</FormLabel>
+                          <NumberInput
+                            value={financialData.savings}
+                            onChange={(_, value) => handleChange('savings', value)}
+                            min={0}
+                            precision={0}
+                            step={100}
+                          >
+                            <NumberInputField
+                              bg={inputBg}
+                              border="1px solid"
+                              borderColor={inputBorder}
+                              color="white"
+                              _hover={{ borderColor: 'rgba(139, 92, 246, 0.5)' }}
+                              _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
+                            />
+                            <NumberInputStepper borderColor={inputBorder}>
+                              <NumberIncrementStepper borderColor={inputBorder} color={mutedText} />
+                              <NumberDecrementStepper borderColor={inputBorder} color={mutedText} />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+
+                        <FormControl>
+                          <FormLabel color={mutedText} fontSize="sm">Investments</FormLabel>
+                          <NumberInput
+                            value={financialData.investments}
+                            onChange={(_, value) => handleChange('investments', value)}
+                            min={0}
+                            precision={0}
+                            step={100}
+                          >
+                            <NumberInputField
+                              bg={inputBg}
+                              border="1px solid"
+                              borderColor={inputBorder}
+                              color="white"
+                              _hover={{ borderColor: 'rgba(139, 92, 246, 0.5)' }}
+                              _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
+                            />
+                            <NumberInputStepper borderColor={inputBorder}>
+                              <NumberIncrementStepper borderColor={inputBorder} color={mutedText} />
+                              <NumberDecrementStepper borderColor={inputBorder} color={mutedText} />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                      </SimpleGrid>
+                    </Box>
+
+                    <FormControl>
+                      <FormLabel color={mutedText} fontWeight="medium" fontSize="sm">Total Debt</FormLabel>
+                      <Slider
                         value={financialData.debt}
-                        textAlign='center'
-                        bg={accentColor}
-                        color='white'
-                        mt='-10'
-                        ml='-5'
-                        w='12'
-                        fontSize="xs"
-                        borderRadius="md"
+                        min={0}
+                        max={500000}
+                        step={5000}
+                        onChange={(value) => handleChange('debt', value)}
+                        mb={4}
                       >
-                        {financialData.debt >= 1000
-                          ? `$${(financialData.debt / 1000).toFixed(0)}k`
-                          : `$${financialData.debt}`}
-                      </SliderMark>
-                    </Slider>
-                    <NumberInput
-                      value={financialData.debt}
-                      onChange={(_, value) => handleChange('debt', value)}
-                      min={0}
-                      precision={0}
-                      step={1000}
-                    >
-                      <NumberInputField
-                        borderColor="gray.300"
-                        _hover={{ borderColor: "purple.300" }}
-                        bg="white"
-                        color="gray.800"
-                        fontSize="lg"
-                      />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                    </NumberInput>
-                  </FormControl>
-                  
-                  <Button 
-                    colorScheme="purple" 
-                    size="lg" 
-                    onClick={analyzeFinances}
-                    isLoading={isLoading}
-                    mt={4}
-                    fontWeight="bold"
-                    _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
-                    transition="all 0.2s"
-                    leftIcon={<FaChartLine />}
-                  >
-                    Analyze My Finances
-                  </Button>
-                </VStack>
-              </CardBody>
-            </Card>
-            
-            {/* Results Section */}
-            <Card 
-              bg={cardBg} 
-              shadow="lg" 
-              borderRadius="lg" 
-              overflow="hidden"
-              border="1px solid"
-              borderColor="purple.100"
-              _hover={{
-                transform: 'translateY(-2px)',
-                transition: 'all 0.2s',
-                boxShadow: 'xl'
-              }}
-            >
-              <CardBody>
-                {!analysisResults ? (
-                  <VStack spacing={6} align="stretch" justify="center" height="100%" opacity={0.7}>
-                    <Box textAlign="center" py={10}>
-                      <Icon as={FaClipboardCheck} boxSize={16} color="purple.300" mb={4} />
-                      <Heading size="md" color={textColor}>Enter your financial data</Heading>
-                      <Text color={textColor} mt={2}>
-                        Then click "Analyze My Finances" to see your personalized financial insights
-                      </Text>
+                        <SliderTrack bg="rgba(255,255,255,0.1)" h="8px" borderRadius="full">
+                          <SliderFilledTrack bgGradient="linear(to-r, #6366f1, #8b5cf6, #ec4899)" />
+                        </SliderTrack>
+                        <SliderThumb boxSize={6} bg={accentColor} boxShadow="0 0 10px rgba(139, 92, 246, 0.5)">
+                          <Icon as={FaCreditCard} color="white" boxSize={3} />
+                        </SliderThumb>
+                        <SliderMark
+                          value={financialData.debt}
+                          textAlign='center'
+                          bg={accentColor}
+                          color='white'
+                          mt='-10'
+                          ml='-5'
+                          w='14'
+                          fontSize="xs"
+                          borderRadius="md"
+                          fontWeight="bold"
+                        >
+                          {financialData.debt >= 1000
+                            ? `$${(financialData.debt / 1000).toFixed(0)}k`
+                            : `$${financialData.debt}`}
+                        </SliderMark>
+                      </Slider>
+                      <NumberInput
+                        value={financialData.debt}
+                        onChange={(_, value) => handleChange('debt', value)}
+                        min={0}
+                        precision={0}
+                        step={1000}
+                      >
+                        <NumberInputField
+                          bg={inputBg}
+                          border="1px solid"
+                          borderColor={inputBorder}
+                          color="white"
+                          fontSize="lg"
+                          _hover={{ borderColor: 'rgba(139, 92, 246, 0.5)' }}
+                          _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
+                        />
+                        <NumberInputStepper borderColor={inputBorder}>
+                          <NumberIncrementStepper borderColor={inputBorder} color={mutedText} />
+                          <NumberDecrementStepper borderColor={inputBorder} color={mutedText} />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </FormControl>
+
+                    <Box mt={4}>
+                      <ShimmerButton
+                        onClick={analyzeFinances}
+                        disabled={isLoading}
+                        shimmerColor="rgba(255,255,255,0.5)"
+                        shimmerDuration="2.5s"
+                        borderRadius="16px"
+                        background="linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)"
+                        style={{
+                          width: '100%',
+                          padding: '16px 24px',
+                          fontSize: '18px',
+                        }}
+                      >
+                        <FaRocket style={{ marginRight: '8px' }} />
+                        {isLoading ? 'Analyzing...' : 'Launch Analysis'}
+                      </ShimmerButton>
                     </Box>
                   </VStack>
-                ) : (
+                </CardBody>
+              </Card>
+            </MotionBox>
+            
+            {/* Results Section - Glassmorphism Card with BorderBeam */}
+            <MotionBox
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <Card
+                bg={cardBg}
+                backdropFilter="blur(20px)"
+                borderRadius="2xl"
+                overflow="hidden"
+                border="1px solid"
+                borderColor={cardBorder}
+                minH="600px"
+                _hover={{
+                  borderColor: 'rgba(139, 92, 246, 0.3)',
+                  boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15)',
+                }}
+                transition="all 0.3s ease"
+                position="relative"
+              >
+                <BorderBeam
+                  size={300}
+                  duration={15}
+                  delay={2}
+                  colorFrom="#ec4899"
+                  colorTo="#06b6d4"
+                  borderWidth={2}
+                />
+                <CardBody p={8}>
+                  {!analysisResults ? (
+                    <VStack spacing={6} align="center" justify="center" height="100%" opacity={0.8}>
+                      <MotionBox
+                        animate={{
+                          y: [0, -10, 0],
+                          rotate: [0, 5, -5, 0],
+                        }}
+                        transition={{
+                          duration: 4,
+                          repeat: Infinity,
+                          repeatType: 'reverse',
+                        }}
+                      >
+                        <Icon as={FaRocket} boxSize={20} color={accentColor} />
+                      </MotionBox>
+                      <Heading size="md" color="white" textAlign="center">
+                        Ready for Liftoff
+                      </Heading>
+                      <Text color={mutedText} textAlign="center" maxW="300px">
+                        Enter your financial data and launch the analysis to explore your financial universe
+                      </Text>
+                      <HStack spacing={2} mt={4}>
+                        {[0, 1, 2].map((i) => (
+                          <MotionBox
+                            key={i}
+                            w="8px"
+                            h="8px"
+                            borderRadius="full"
+                            bg={accentColor}
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              delay: i * 0.2,
+                            }}
+                          />
+                        ))}
+                      </HStack>
+                    </VStack>
+                  ) : (
                   <VStack spacing={6} align="stretch">
                     <Box textAlign="center" position="relative" py={8}>
                       <MotionHeading 
@@ -675,15 +783,13 @@ const FinancialDataEntry: React.FC = () => {
                         >
                           <CircularProgressLabel>
                             <VStack spacing={0}>
-                              <MotionText 
-                                fontSize="3xl" 
-                                fontWeight="bold"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.8, delay: 0.5 }}
-                              >
-                                {calculateFinancialHealthScore()}
-                              </MotionText>
+                              <Box fontSize="3xl" fontWeight="bold">
+                                <NumberTicker
+                                  value={calculateFinancialHealthScore()}
+                                  delay={0.2}
+                                  className=""
+                                />
+                              </Box>
                               <MotionText 
                                 fontSize="xs" 
                                 fontWeight="normal" 
@@ -763,171 +869,183 @@ const FinancialDataEntry: React.FC = () => {
                     )}
                     
                     <MotionSimpleGrid
-                      columns={{ base: 1, md: 2 }} 
-                      spacing={6} 
-                      bg="white" 
-                      p={5} 
-                      borderRadius="xl" 
-                      boxShadow="sm"
+                      columns={{ base: 1, md: 2 }}
+                      spacing={4}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.3 }}
                     >
-                      <MotionBox 
-                        bg="gray.50" 
-                        p={4} 
-                        borderRadius="lg" 
+                      <MotionBox
+                        bg="rgba(255,255,255,0.03)"
+                        backdropFilter="blur(10px)"
+                        p={5}
+                        borderRadius="xl"
                         position="relative"
                         overflow="hidden"
-                        whileHover={{ y: -5, boxShadow: "0 6px 20px rgba(0,0,0,0.1)" }}
-                        transition={{ duration: 0.2 }}
+                        border="1px solid"
+                        borderColor="rgba(255,255,255,0.1)"
+                        whileHover={{ y: -3, boxShadow: '0 8px 30px rgba(16, 185, 129, 0.2)' }}
                         _before={{
                           content: '""',
-                          position: "absolute",
+                          position: 'absolute',
                           top: 0,
                           left: 0,
-                          width: "4px",
-                          height: "100%",
-                          bg: analysisResults.metrics.monthlySavings >= 0 ? "green.400" : "red.400"
+                          width: '4px',
+                          height: '100%',
+                          bgGradient: analysisResults.metrics.monthlySavings >= 0
+                            ? 'linear(to-b, #10b981, #06b6d4)'
+                            : 'linear(to-b, #ef4444, #f97316)',
                         }}
                       >
-                        <Text fontSize="sm" color="gray.500" mb={1} fontWeight="medium">
+                        <Text fontSize="xs" color="whiteAlpha.600" mb={1} fontWeight="semibold" letterSpacing="wider">
                           MONTHLY CASH FLOW
                         </Text>
-                        <Heading 
-                          size="xl" 
-                          color={analysisResults.metrics.monthlySavings >= 0 ? "green.500" : "red.500"}
+                        <Heading
+                          size="xl"
+                          color={analysisResults.metrics.monthlySavings >= 0 ? '#10b981' : '#ef4444'}
                           display="flex"
-                          alignItems="center"
+                          alignItems="baseline"
                         >
-                          <Text>${Math.abs(analysisResults.metrics.monthlySavings).toLocaleString()}</Text>
-                          <Text fontSize="sm" color="gray.500" ml={2}>
-                            {analysisResults.metrics.monthlySavings >= 0 ? "+/mo" : "-/mo"}
+                          <NumberTicker
+                            value={Math.abs(analysisResults.metrics.monthlySavings)}
+                            prefix="$"
+                            delay={0.3}
+                            className=""
+                          />
+                          <Text fontSize="sm" color="whiteAlpha.600" ml={2}>
+                            {analysisResults.metrics.monthlySavings >= 0 ? '+/mo' : '-/mo'}
                           </Text>
                         </Heading>
-                        <Flex align="center" mt={1}>
-                          <Icon 
-                            as={analysisResults.metrics.monthlySavings >= 0 ? FaArrowUp : FaArrowDown} 
-                            color={analysisResults.metrics.monthlySavings >= 0 ? "green.500" : "red.500"}
+                        <Flex align="center" mt={2}>
+                          <Icon
+                            as={analysisResults.metrics.monthlySavings >= 0 ? FaArrowUp : FaArrowDown}
+                            color={analysisResults.metrics.monthlySavings >= 0 ? '#10b981' : '#ef4444'}
                             mr={1}
                           />
-                          <Text color="gray.600" fontSize="sm">
+                          <Text color="whiteAlpha.700" fontSize="sm">
                             {analysisResults.metrics.savingsRate.toFixed(0)}% of income
                           </Text>
                         </Flex>
                       </MotionBox>
-                      
-                      <MotionBox 
-                        bg="gray.50" 
-                        p={4} 
-                        borderRadius="lg" 
+
+                      <MotionBox
+                        bg="rgba(255,255,255,0.03)"
+                        backdropFilter="blur(10px)"
+                        p={5}
+                        borderRadius="xl"
                         position="relative"
                         overflow="hidden"
-                        whileHover={{ y: -5, boxShadow: "0 6px 20px rgba(0,0,0,0.1)" }}
-                        transition={{ duration: 0.2 }}
+                        border="1px solid"
+                        borderColor="rgba(255,255,255,0.1)"
+                        whileHover={{ y: -3, boxShadow: '0 8px 30px rgba(99, 102, 241, 0.2)' }}
                         _before={{
                           content: '""',
-                          position: "absolute",
+                          position: 'absolute',
                           top: 0,
                           left: 0,
-                          width: "4px",
-                          height: "100%",
-                          bg: analysisResults.metrics.netWorth >= 0 ? "blue.400" : "orange.400"
+                          width: '4px',
+                          height: '100%',
+                          bgGradient: analysisResults.metrics.netWorth >= 0
+                            ? 'linear(to-b, #6366f1, #8b5cf6)'
+                            : 'linear(to-b, #f97316, #ef4444)',
                         }}
                       >
-                        <Text fontSize="sm" color="gray.500" mb={1} fontWeight="medium">
-                          MONEY STASH
+                        <Text fontSize="xs" color="whiteAlpha.600" mb={1} fontWeight="semibold" letterSpacing="wider">
+                          NET WORTH
                         </Text>
-                        <Heading 
-                          size="xl" 
-                          color={analysisResults.metrics.netWorth >= 0 ? "blue.500" : "orange.500"}
+                        <Heading
+                          size="xl"
+                          color={analysisResults.metrics.netWorth >= 0 ? '#8b5cf6' : '#f97316'}
                           display="flex"
-                          alignItems="center"
+                          alignItems="baseline"
                         >
-                          <Text>${Math.abs(analysisResults.metrics.netWorth).toLocaleString()}</Text>
-                          <Text fontSize="sm" color="gray.500" ml={2}>
-                            net worth
-                          </Text>
+                          <NumberTicker
+                            value={Math.abs(analysisResults.metrics.netWorth)}
+                            prefix={analysisResults.metrics.netWorth >= 0 ? '$' : '-$'}
+                            delay={0.5}
+                            className=""
+                          />
                         </Heading>
-                        <Flex align="center" mt={1}>
-                          <Text color="gray.600" fontSize="sm">
-                            Assets − Debt
+                        <Flex align="center" mt={2}>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            Assets - Debt
                           </Text>
                         </Flex>
                       </MotionBox>
                     </MotionSimpleGrid>
                     
-                    <MotionBox 
-                      bg="white" 
-                      p={5} 
-                      borderRadius="xl" 
-                      boxShadow="sm"
+                    <MotionBox
+                      mt={4}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.5 }}
                     >
-                      <MotionHeading 
-                        size="md" 
-                        mb={4} 
-                        display="flex" 
+                      <MotionHeading
+                        size="md"
+                        mb={4}
+                        display="flex"
                         alignItems="center"
-                        bgGradient="linear(to-r, purple.400, blue.500)" 
-                        bgClip="text"
+                        color="white"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ duration: 0.5 }}
                       >
-                        <Icon as={FaLightbulb} mr={2} />
+                        <Icon as={FaLightbulb} mr={2} color="#fbbf24" />
                         Smart Money Moves
                       </MotionHeading>
-                      
-                      <VStack spacing={4} align="stretch">
+
+                      <VStack spacing={3} align="stretch">
                         {analysisResults.insights.map((insight, index) => {
-                          // Determine accent color based on severity
-                          const accentColor = getSeverityColor(insight.severity);
-                          const gradientColors = 
-                            insight.severity === 'positive' ? 'linear(to-r, green.400, teal.400)' :
-                            insight.severity === 'warning' ? 'linear(to-r, orange.400, yellow.400)' :
-                            'linear(to-r, red.400, pink.400)';
-                            
+                          // Determine colors based on severity
+                          const severityColors = {
+                            positive: { gradient: 'linear(to-r, #10b981, #06b6d4)', glow: 'rgba(16, 185, 129, 0.2)' },
+                            warning: { gradient: 'linear(to-r, #f59e0b, #fbbf24)', glow: 'rgba(245, 158, 11, 0.2)' },
+                            critical: { gradient: 'linear(to-r, #ef4444, #ec4899)', glow: 'rgba(239, 68, 68, 0.2)' },
+                          };
+                          const colors = severityColors[insight.severity as keyof typeof severityColors] || severityColors.warning;
+
                           // Icon based on severity
-                          const severityIcon = 
+                          const severityIcon =
                             insight.severity === 'positive' ? FaTrophy :
-                            insight.severity === 'warning' ? FaLightbulb : 
+                            insight.severity === 'warning' ? FaLightbulb :
                             FaFire;
-                            
+
                           return (
-                            <MotionBox 
-                              key={index} 
-                              p={4} 
-                              borderRadius="lg" 
-                              bg="gray.50"
+                            <MotionBox
+                              key={index}
+                              p={4}
+                              borderRadius="xl"
+                              bg="rgba(255,255,255,0.03)"
+                              backdropFilter="blur(10px)"
+                              border="1px solid"
+                              borderColor="rgba(255,255,255,0.08)"
                               position="relative"
                               overflow="hidden"
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ duration: 0.5, delay: 0.2 + (index * 0.1) }}
-                              whileHover={{ 
-                                y: -2, 
-                                boxShadow: "lg",
-                                transition: { duration: 0.2 }
+                              whileHover={{
+                                y: -2,
+                                boxShadow: colors.glow,
+                                borderColor: 'rgba(255,255,255,0.15)',
                               }}
                               _before={{
                                 content: '""',
-                                position: "absolute",
+                                position: 'absolute',
                                 top: 0,
                                 left: 0,
-                                width: "4px",
-                                height: "100%",
-                                bgGradient: gradientColors
+                                width: '3px',
+                                height: '100%',
+                                bgGradient: colors.gradient,
                               }}
                             >
-                              <Flex justify="space-between" mb={2}>
-                                <Badge 
-                                  px={3} 
-                                  py={1} 
-                                  borderRadius="full" 
-                                  colorScheme={accentColor}
+                              <Flex justify="space-between" mb={2} align="center">
+                                <Badge
+                                  px={3}
+                                  py={1}
+                                  borderRadius="full"
+                                  bg="rgba(255,255,255,0.1)"
+                                  color="white"
                                   textTransform="uppercase"
                                   fontWeight="bold"
                                   fontSize="xs"
@@ -937,31 +1055,30 @@ const FinancialDataEntry: React.FC = () => {
                                     {insight.type.split('_').join(' ')}
                                   </Flex>
                                 </Badge>
-                                
-                                <Text 
-                                  fontSize="xs" 
-                                  fontWeight="bold" 
-                                  color={`${accentColor}.500`}
-                                  textTransform="uppercase"
+
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="whiteAlpha.700"
                                 >
-                                  {insight.severity === 'positive' ? '✨ Great' : 
-                                   insight.severity === 'warning' ? '⚠️ Attention Needed' : 
-                                   '🚨 Take Action'}
+                                  {insight.severity === 'positive' ? 'On Track' :
+                                   insight.severity === 'warning' ? 'Review' :
+                                   'Action Needed'}
                                 </Text>
                               </Flex>
-                              
-                              <Text fontWeight="bold" color="gray.700" mb={1}>
+
+                              <Text fontWeight="semibold" color="white" mb={1} fontSize="sm">
                                 {insight.message}
                               </Text>
-                              
-                              <Text fontSize="sm" color="gray.600">
+
+                              <Text fontSize="sm" color="whiteAlpha.700">
                                 {insight.recommendation}
                               </Text>
                             </MotionBox>
                           );
                         })}
                       </VStack>
-                      
+
                       <MotionBox
                         textAlign="center"
                         mt={6}
@@ -969,41 +1086,44 @@ const FinancialDataEntry: React.FC = () => {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 1.2, duration: 0.8 }}
                       >
-                        <Button
-                          colorScheme="purple"
-                          variant="outline"
-                          rightIcon={<FaRocket />}
-                          _hover={{
-                            transform: 'translateY(-2px)',
-                            shadow: 'md'
+                        <ShimmerButton
+                          shimmerColor="rgba(139, 92, 246, 0.6)"
+                          shimmerDuration="3s"
+                          borderRadius="16px"
+                          background="linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 50%, rgba(236, 72, 153, 0.2) 100%)"
+                          style={{
+                            padding: '12px 24px',
+                            border: '1px solid rgba(139, 92, 246, 0.5)',
                           }}
                         >
                           Get Custom Action Plan
-                        </Button>
+                          <FaRocket style={{ marginLeft: '8px' }} />
+                        </ShimmerButton>
                       </MotionBox>
                     </MotionBox>
                   </VStack>
                 )}
               </CardBody>
             </Card>
+            </MotionBox>
           </SimpleGrid>
         </VStack>
-        <Box textAlign="center" mt={12} opacity={0.8}>
-          <Divider mb={4} />
-          <Text fontSize="sm" color="gray.500">
-            Financial Decision Copilot v1.0 - Powered by AI
+        <Box textAlign="center" mt={12} opacity={0.6}>
+          <Divider borderColor="whiteAlpha.200" mb={4} />
+          <Text fontSize="sm" color="whiteAlpha.600">
+            FinAI Copilot v2.0 - Navigating Your Financial Universe
           </Text>
           {showDevTools && (
             <HStack spacing={4} justifyContent="center" mt={2}>
-              <Link 
-                as={NextLink} 
-                href="/diagnostics?devMode=true" 
-                fontSize="sm" 
-                color="purple.500"
-                _hover={{ textDecoration: 'underline' }}
+              <Link
+                as={NextLink}
+                href="/diagnostics?devMode=true"
+                fontSize="sm"
+                color={accentColor}
+                _hover={{ textDecoration: 'underline', color: '#ec4899' }}
               >
                 <Icon as={FaTools} mr={1} />
-                Diagnostics & Troubleshooting
+                Mission Control
               </Link>
             </HStack>
           )}
