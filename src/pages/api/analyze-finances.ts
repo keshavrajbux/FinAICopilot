@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { FinancialAnalysisAgent } from '@/lib/financial-analysis-agent';
-import { supabaseAdmin } from '@/lib/supabase-admin';
 import {
+  FinancialAnalysisAgent,
   validateFinancialData,
   calculateAnalysis,
-  AnalysisResults,
-  FinancialData,
-} from '@/lib/calculations';
+} from '@/lib/product';
+import type { AnalysisResults, FinancialData } from '@/lib/product';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import {
   getAuthenticatedUser,
   setCorsHeaders,

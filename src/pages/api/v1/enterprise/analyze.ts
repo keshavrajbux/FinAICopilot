@@ -10,16 +10,19 @@
 import { NextApiResponse } from 'next';
 import {
   withTenantAuth,
-  TenantRequest,
   logApiRequest,
   trackApiUsage,
   setCorsHeaders,
-  handleCorsPrelight
-} from '@/lib/platform/tenant-middleware';
-import { TenantConfig } from '@/lib/platform/types';
-import { FinancialAnalysisAgent, FinancialData, AnalysisResults } from '@/lib/financial-analysis-agent';
-import { validateFinancialData } from '@/lib/calculations';
-import { tenantManager } from '@/lib/platform/tenant-manager';
+  handleCorsPrelight,
+  tenantManager,
+} from '@/lib/enterprise';
+import type { TenantRequest, TenantConfig } from '@/lib/enterprise';
+import {
+  FinancialAnalysisAgent,
+  validateFinancialData,
+  calculateAnalysis,
+} from '@/lib/product';
+import type { FinancialData, AnalysisResults } from '@/lib/product';
 
 interface AnalyzeRequest {
   userId: string; // Tenant's end user ID
@@ -147,7 +150,6 @@ async function handleAnalyze(
       tokensUsed = estimateTokens(validatedData, analysisResults);
     } catch (aiError) {
       console.error('AI analysis failed, using local calculations:', aiError);
-      const { calculateAnalysis } = await import('@/lib/calculations');
       analysisResults = calculateAnalysis(validatedData);
     }
 
