@@ -1,87 +1,35 @@
-import { AnalysisResults } from './calculations';
+/**
+ * Backward-compatibility re-export
+ *
+ * The canonical locations are now:
+ *   - Core provider: @/lib/core/providers/claude-provider
+ *   - Core base agent: @/lib/core/agents/base-agent
+ *
+ * This file bridges the old API shape to the new layered architecture.
+ */
 
-// Claude model to use
-const MODEL = 'claude-3-haiku-20240307';
+import { callClaude } from './core/providers/claude-provider';
+import { AnalysisResults } from './product/analysis/calculations';
 
 export type Message = {
   role: 'user' | 'assistant';
   content: string;
 };
 
-// Response types
-interface ClaudeTextBlock {
-  type: 'text';
-  text: string;
-}
-
-interface ClaudeResponse {
-  content: ClaudeTextBlock[];
-}
-
 /**
- * Generates a response from Claude based on the provided messages
+ * @deprecated Use callClaude from @/lib/core instead
  */
 export async function generateClaudeResponse(
   messages: Message[],
   systemPrompt: string
 ): Promise<string> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('Claude API key not configured');
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        system: systemPrompt,
-        messages: messages,
-        max_tokens: 2000,
-        temperature: 0.7,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Claude API Error [${response.status}]:`, errorText);
-      throw new Error(`Claude API Error: ${response.status}`);
-    }
-
-    const data: ClaudeResponse = await response.json();
-
-    const textContent = data.content.find(
-      (block): block is ClaudeTextBlock => block.type === 'text'
-    );
-
-    if (!textContent) {
-      throw new Error('No text content in Claude response');
-    }
-
-    return textContent.text;
-  } catch (error) {
-    clearTimeout(timeout);
-
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Claude API request timed out');
-    }
-
-    throw error;
-  }
+  const result = await callClaude(messages, systemPrompt);
+  return result.text;
 }
 
 /**
- * Base agent class that uses Claude for financial analysis
+ * @deprecated Use BaseAgent from @/lib/core instead
+ * Legacy BaseAgent that returns AnalysisResults (finance-specific).
  */
 export class BaseAgent {
   protected systemPrompt: string;

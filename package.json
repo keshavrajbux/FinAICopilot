@@ -37,13 +37,13 @@
     "@testing-library/jest-dom": "^6.2.0",
     "@testing-library/react": "^14.1.2",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.11.5",
-    "@types/react": "^18.2.48",
+    "@types/node": "20.19.32",
+    "@types/react": "18.3.28",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
