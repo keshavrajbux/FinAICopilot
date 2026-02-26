@@ -27,3 +27,22 @@ export type {
   FinancialInsight,
   InsightSeverity,
 } from './analysis';
+
+// Cash Flow Forecasting
+export {
+  CashFlowAgent,
+  computeForecast,
+  projectScenario,
+  ForecastRequestSchema,
+} from './cashflow';
+
+export type {
+  CashFlowForecast,
+  ForecastInsight,
+  ForecastRequest,
+  ScenarioParams,
+  ScenarioType,
+  MonthlyProjection,
+  ForecastSummary,
+  ScenarioForecast,
+} from './cashflow';

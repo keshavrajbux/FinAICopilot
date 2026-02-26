@@ -22,6 +22,7 @@ type FeatureFlag =
 
   // Product features (fintech)
   | 'product.financialAnalysis'
+  | 'product.cashFlowForecast'
   | 'product.riskAssessment'
   | 'product.productRecommendations'
   | 'product.conversationalAI'
@@ -44,12 +45,14 @@ const VARIANT_DEFAULTS: Record<ProductVariant, Set<FeatureFlag>> = {
     'core.openaiProvider',
     'core.localFallback',
     'product.financialAnalysis',
+    'product.cashFlowForecast',
   ]),
   enterprise: new Set<FeatureFlag>([
     'core.claudeProvider',
     'core.openaiProvider',
     'core.localFallback',
     'product.financialAnalysis',
+    'product.cashFlowForecast',
     'product.riskAssessment',
     'product.productRecommendations',
     'product.conversationalAI',
@@ -108,6 +111,7 @@ class FeatureFlags {
     // Map tenant feature names to our flag names
     const featureMapping: Record<string, FeatureFlag> = {
       basicAnalysis: 'product.financialAnalysis',
+      cashFlowForecast: 'product.cashFlowForecast',
       riskAssessment: 'product.riskAssessment',
       productRecommendations: 'product.productRecommendations',
       conversationalAI: 'product.conversationalAI',
