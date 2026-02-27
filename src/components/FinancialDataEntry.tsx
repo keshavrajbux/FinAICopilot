@@ -39,6 +39,7 @@ import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import UserMenu from './UserMenu';
 import SpaceBackground from './SpaceBackground';
+import ForecastDashboard from './ForecastDashboard';
 
 // Magic UI Components for cosmic effects
 import { Particles } from './magicui/particles';
@@ -1108,6 +1109,13 @@ const FinancialDataEntry: React.FC = () => {
             </Card>
             </MotionBox>
           </SimpleGrid>
+
+          {/* Cash Flow Forecast - shown after analysis is complete */}
+          {analysisResults && (
+            <Box mt={8}>
+              <ForecastDashboard financialData={financialData} />
+            </Box>
+          )}
         </VStack>
         <Box textAlign="center" mt={12} opacity={0.6}>
           <Divider borderColor="whiteAlpha.200" mb={4} />
